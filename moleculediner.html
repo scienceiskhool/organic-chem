@@ -1,0 +1,1934 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Molecule Diner</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+/* Layout: Arcade Punch (light, brand colours) for start and results; dark neon arcade for the climb and the boss fight. */
+:root {
+  --orange: #FF8243; --pink: #FFC0CB; --yellow: #FCE883; --teal: #069494; --teal-ink: #057A7A;
+  --orange-tint: #FFE6DA; --pink-tint: #FFEEF1; --yellow-tint: #FEF8D9; --teal-tint: #DDF2F2;
+  --ink: #1F2A2E; --muted: #56656A; --line: #E4E8E9; --bg: #FFFFFF;
+  --good: #1E9E62; --good-tint: #D8F3E4; --bad: #E2463A;
+  --b: 3px solid var(--ink);
+  --font: "Open Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --pixel: "Press Start 2P", ui-monospace, "Courier New", monospace;
+  --night: #0D0B1A; --night-2: #19152E; --night-3: #2A2448;
+  --neon-teal: #2EF2E0; --neon-pink: #FF7FB0; --neon-yellow: #FCE883; --neon-orange: #FF8243; --neon-red: #FF4D5E; --neon-green: #4CF08A;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); }
+body {
+  font: 16px/1.5 var(--font); min-height: 100vh; min-height: 100dvh;
+  display: flex; flex-direction: column;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  transition: background .3s;
+}
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+[hidden] { display: none !important; }
+.sub { font-size: .68em; position: relative; bottom: -.25em; line-height: 0; }
+sup { font-size: .68em; line-height: 0; position: relative; top: -.1em; vertical-align: super; font-weight: 800; }
+:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+
+/* ---------- shared pieces ---------- */
+.wrap { width: 100%; max-width: 1040px; margin: 0 auto; padding: 16px; flex: 1; display: flex; flex-direction: column; }
+.card { background: #fff; border: var(--b); border-radius: 22px; box-shadow: 6px 6px 0 var(--ink); }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: var(--b); border-radius: 16px; padding: 14px 18px; font-weight: 800; font-size: 1.1rem;
+  background: var(--orange); color: var(--ink); box-shadow: 0 5px 0 var(--ink);
+  transition: transform .08s, box-shadow .08s; user-select: none; -webkit-user-select: none;
+}
+.btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
+.btn.big { width: 100%; font-size: 1.15rem; text-transform: uppercase; letter-spacing: .03em; padding: 16px; }
+.btn.alt { background: #fff; }
+.btn.sm { padding: 9px 14px; font-size: .95rem; border-radius: 12px; box-shadow: 0 3px 0 var(--ink); }
+.pill { display: inline-block; font-size: .72rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; border: 2px solid var(--ink); border-radius: 99px; padding: 2px 10px; background: #fff; }
+.icon-btn { width: 42px; height: 42px; border-radius: 12px; border: var(--b); background: #fff; display: grid; place-items: center; box-shadow: 0 3px 0 var(--ink); padding: 0; flex: none; }
+.icon-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+.icon-btn svg { width: 20px; height: 20px; }
+.icon-btn.off { opacity: .45; }
+
+/* ---------- top bar ---------- */
+.topbar { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 2px solid var(--line); background: #fff; }
+.topbar .brand { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; text-decoration: none; color: var(--ink); }
+.topbar .brand img { width: 38px; height: 38px; border-radius: 50%; border: 2.5px solid var(--ink); background: var(--yellow); object-fit: cover; flex: none; }
+.topbar .brand b { font-weight: 800; font-size: 1.05rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.topbar .brand small { display: block; font-size: .72rem; color: var(--muted); font-weight: 600; line-height: 1.2; }
+body.playing .topbar { padding: 6px 12px; }
+body.playing .topbar .brand img { width: 30px; height: 30px; }
+body.playing .icon-btn { width: 36px; height: 36px; }
+body.playing footer { display: none; }
+body.playing .wrap { padding: 8px 12px 10px; }
+
+/* ---------- start screen ---------- */
+.start { display: grid; gap: 22px; grid-template-columns: 1fr; align-items: start; margin: auto 0; padding-block: 8px 20px; }
+.hero { background: var(--teal); color: #fff; padding: 22px; position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 14px; }
+.hero h1 { margin: 6px 0 0; font-size: clamp(2rem, 7vw, 3rem); line-height: 1.05; font-weight: 800; letter-spacing: -.01em; text-wrap: balance; }
+.hero h1 em { font-style: normal; background: var(--yellow); color: var(--ink); border: var(--b); border-radius: 14px; padding: 0 10px; display: inline-block; transform: rotate(-2deg); }
+.hero p { margin: 0; max-width: 40ch; font-weight: 600; }
+.hero .pill { color: var(--ink); align-self: flex-start; }
+.hero-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.hero-title { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; min-width: 0; }
+.hero .cast { width: clamp(110px, 30vw, 170px); height: auto; flex: none; object-fit: contain; image-rendering: auto; filter: drop-shadow(4px 4px 0 rgba(31,42,46,.35)); margin: -6px -4px -10px 0; }
+.demo { background: #fff; color: var(--ink); border: var(--b); border-radius: 16px; padding: 12px 14px; font-weight: 700; display: flex; flex-direction: column; gap: 8px; font-size: .95rem; }
+.demo small { font-size: .7rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--teal-ink); }
+.mmap { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.mmap .q { background: var(--yellow-tint); border: 2px solid var(--ink); border-radius: 10px; padding: 2px 8px; white-space: nowrap; }
+.mmap .q.mol { background: var(--yellow); }
+.mmap .op { font-size: .8rem; color: var(--teal-ink); font-weight: 800; white-space: nowrap; }
+.modes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mode-card { padding: 12px; border: var(--b); border-radius: 16px; background: var(--yellow-tint); color: var(--ink); }
+.mode-card.dark { background: var(--night); color: #fff; }
+.mode-card b { display: block; font-weight: 800; }
+.mode-card.dark b { font-family: var(--pixel); font-size: .72rem; color: var(--neon-yellow); line-height: 1.6; }
+.mode-card span { font-size: .85rem; display: block; line-height: 1.4; margin-top: 4px; }
+.form { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.form h2 { margin: 0; font-size: 1.25rem; font-weight: 800; }
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.fields .full { grid-column: 1 / -1; }
+label.f { display: flex; flex-direction: column; gap: 4px; font-weight: 700; font-size: .9rem; }
+label.f input, label.f select { font-size: 16px; padding: 12px; border: 2.5px solid var(--ink); border-radius: 12px; background: #fff; width: 100%; min-width: 0; }
+label.f input:focus, label.f select:focus { outline: 3px solid var(--yellow); outline-offset: 1px; }
+.grp { display: flex; flex-direction: column; gap: 6px; }
+.grp > span { font-weight: 700; font-size: .9rem; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.chip { border: 2.5px solid var(--ink); border-radius: 12px; background: #fff; padding: 8px 12px; font-weight: 700; font-size: .9rem; box-shadow: 0 3px 0 var(--ink); }
+.chip[aria-pressed="true"] { background: var(--yellow); }
+.seg .chip { text-align: center; }
+.seg .chip small { display: block; font-weight: 600; font-size: .75rem; color: var(--muted); }
+.form-err { color: var(--bad); font-weight: 700; font-size: .9rem; min-height: 1.2em; margin: -4px 0 0; }
+.btn.boss-btn { background: var(--night); color: var(--neon-yellow); font-family: var(--pixel); font-size: .78rem; line-height: 1.5; }
+.best { display: flex; justify-content: space-between; font-size: .9rem; color: var(--muted); font-weight: 700; }
+.best b { color: var(--ink); }
+.how { margin: 0; padding-left: 1.2em; font-size: .9rem; font-weight: 600; color: var(--muted); }
+@media (min-width: 760px) { .start { grid-template-columns: 1.05fr 1fr; gap: 28px; } }
+@media (max-width: 420px) { .modes { grid-template-columns: 1fr; } .hero .cast { width: 96px; } }
+
+/* ---------- dark arcade (climb + boss) ---------- */
+body.dark { background: var(--night); }
+body.dark .topbar { background: var(--night); border-bottom-color: var(--night-3); }
+body.dark .topbar .brand, body.dark .topbar .brand small { color: #fff; }
+body.dark .icon-btn { background: var(--night-2); border-color: var(--neon-teal); color: var(--neon-teal); box-shadow: 0 3px 0 var(--neon-teal); }
+body.dark footer { color: #8C86A8; }
+body.dark footer a { color: var(--neon-teal); }
+
+.hearts { display: flex; gap: 4px; }
+.hearts svg { width: 22px; height: 20px; }
+.hearts .lost { opacity: .22; }
+.hearts .breaking { animation: heartbreak .6s; }
+@keyframes heartbreak { 0% { transform: scale(1); } 40% { transform: scale(1.5) rotate(-12deg); } 100% { transform: scale(1); } }
+/* ---------- boss fight ---------- */
+.boss { display: flex; flex-direction: column; gap: 14px; color: #fff; margin-block: 4px 16px; position: relative; }
+.arena { border: 3px solid var(--neon-teal); border-radius: 6px; background: var(--night-2); box-shadow: 0 0 0 3px var(--night), 0 0 22px rgba(46,242,224,.35); overflow: hidden; position: relative; }
+.arena::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0 2px, transparent 2px 4px); }
+.bhud { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 12px 12px 0; font-family: var(--pixel); font-size: .62rem; line-height: 1.6; position: relative; z-index: 2; }
+.hp-who { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.hp-who.boss-side { align-items: flex-end; text-align: right; flex: 1; }
+.hpbar { width: min(220px, 100%); height: 16px; border: 3px solid #fff; background: var(--night); padding: 2px; }
+.hpbar i { display: block; height: 100%; background: var(--neon-pink); width: 100%; transition: width .45s steps(8); }
+.hpbar i.low { background: var(--neon-red); }
+.bname { color: var(--neon-pink); }
+.hname { color: var(--neon-teal); }
+.stage { position: relative; height: 210px; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 6% 18px; }
+.stage::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 46px; background:
+  repeating-linear-gradient(90deg, rgba(46,242,224,.35) 0 2px, transparent 2px 40px), linear-gradient(var(--night-3), var(--night)); border-top: 2px solid var(--neon-teal); }
+.stars { position: absolute; inset: 0; background-image: radial-gradient(1.5px 1.5px at 12% 20%, #fff 50%, transparent 51%), radial-gradient(1.5px 1.5px at 38% 12%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 62% 28%, #fff 50%, transparent 51%), radial-gradient(1.5px 1.5px at 84% 10%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 92% 34%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 24% 40%, #fff 50%, transparent 51%); opacity: .7; }
+.sprite { position: relative; z-index: 1; image-rendering: pixelated; }
+.sprite svg, .sprite img { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+.hero-sp.pic { width: 100px; height: 118px; }
+.mon-sp.pic { width: 150px; height: 150px; }
+.sprite.pic img { width: 100%; height: 100%; object-fit: contain; object-position: center bottom; image-rendering: auto; }
+.mon-sp img { transform: scaleX(-1); }
+.hero-sp { width: 86px; animation: bob 1s steps(2) infinite; }
+.mon-sp { width: 140px; animation: bob 1.4s steps(2) infinite; }
+@keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+.hero-sp.atk { animation: lunge-r .45s steps(4); }
+.mon-sp.atk { animation: lunge-l .5s steps(4); }
+@keyframes lunge-r { 50% { transform: translateX(40px); } }
+@keyframes lunge-l { 50% { transform: translateX(-60px) scale(1.08); } }
+.sprite.hit { animation: hit .5s steps(2); }
+@keyframes hit { 0%,50% { filter: brightness(3) saturate(0); transform: translateX(6px); } 25%,75% { filter: none; transform: translateX(-6px); } 100% { filter: none; transform: none; } }
+.sprite.dead { animation: none; opacity: .25; filter: grayscale(1); transform: translateY(16px) rotate(8deg); transition: all .8s steps(6); }
+.bolt { position: absolute; left: 22%; bottom: 70px; width: 30px; height: 30px; z-index: 3; opacity: 0; }
+.bolt img, .bolt svg { width: 100%; height: 100%; display: block; object-fit: contain; }
+.bolt.fly { animation: fly .45s steps(6) forwards; }
+@keyframes fly { 0% { opacity: 1; left: 22%; transform: rotate(0); } 90% { opacity: 1; } 100% { opacity: 0; left: 66%; transform: rotate(360deg); } }
+.dmg { position: absolute; z-index: 4; font-family: var(--pixel); font-size: .9rem; color: var(--neon-yellow); text-shadow: 2px 2px 0 var(--night); animation: rise 1s steps(8) forwards; pointer-events: none; }
+.dmg.hurt { color: var(--neon-red); }
+@keyframes rise { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-50px); opacity: 0; } }
+.flash { position: absolute; inset: 0; background: var(--neon-red); opacity: 0; pointer-events: none; z-index: 5; }
+.flash.on { animation: flash .4s steps(2); }
+@keyframes flash { 0%,50% { opacity: .35; } 100% { opacity: 0; } }
+.charge { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-top: 3px solid var(--neon-teal); font-family: var(--pixel); font-size: .55rem; line-height: 1.5; color: var(--neon-pink); position: relative; z-index: 2; background: var(--night); }
+.charge .cbar { flex: 1; height: 14px; border: 2px solid var(--neon-pink); padding: 2px; min-width: 60px; }
+.charge .cbar i { display: block; height: 100%; width: 0; background: var(--neon-pink); }
+.charge.warn .cbar i { background: var(--neon-red); }
+.charge b { color: #fff; min-width: 2.5em; text-align: right; font-weight: 400; }
+.phase { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); font-family: var(--pixel); color: var(--neon-red); font-size: 1rem; text-shadow: 3px 3px 0 var(--night); z-index: 6; white-space: nowrap; animation: blink .5s steps(1) 4; }
+@keyframes blink { 50% { opacity: 0; } }
+.qbox { border: 3px solid #fff; border-radius: 6px; background: var(--night); padding: 14px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 0 0 3px var(--night-3); }
+.qtop { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.qtype { margin: 0; font-family: var(--pixel); font-size: .68rem; color: var(--neon-yellow); line-height: 1.6; }
+.bq { margin: 0; font-weight: 700; font-size: 1.25rem; line-height: 1.45; }
+.qeq { background: var(--night-2); border: 2px dashed var(--night-3); border-radius: 6px; padding: 10px; font-weight: 700; font-size: 1.15rem; line-height: 1.7; }
+.qopts { display: grid; grid-template-columns: 1fr; gap: 10px; }
+.qopt { display: flex; gap: 10px; align-items: center; text-align: left; border: 3px solid var(--neon-teal); background: var(--night-2); color: #fff; border-radius: 6px; padding: 10px 12px; font-weight: 700; font-size: 1.05rem; box-shadow: 0 4px 0 var(--neon-teal); line-height: 1.6; transition: transform .08s, box-shadow .08s; }
+.qopt:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--neon-teal); }
+.qopt .k { flex: none; width: 30px; height: 30px; display: grid; place-items: center; font-family: var(--pixel); font-size: .7rem; background: var(--neon-teal); color: var(--night); }
+.qopt.right { border-color: var(--neon-green); box-shadow: 0 4px 0 var(--neon-green); background: #12351F; }
+.qopt.right .k { background: var(--neon-green); }
+.qopt.wrong { border-color: var(--neon-red); box-shadow: 0 4px 0 var(--neon-red); background: #3A1420; }
+.qopt.wrong .k { background: var(--neon-red); }
+.qopt:disabled { cursor: default; }
+.qopt:disabled:not(.right):not(.wrong) { opacity: .55; }
+.qfb { border: 3px solid var(--neon-yellow); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; background: var(--night-2); }
+.qfb.no { border-color: var(--neon-red); }
+.qfb p { margin: 0; font-weight: 600; }
+.qfb .ans { color: var(--neon-green); font-weight: 800; }
+.qfb .work { color: #D6D1F0; font-size: .95rem; }
+.pbtn { font-family: var(--pixel); font-size: .72rem; line-height: 1.5; border: 3px solid var(--night); background: var(--neon-yellow); color: var(--night); padding: 14px 16px; box-shadow: 0 4px 0 var(--neon-orange); border-radius: 4px; }
+.pbtn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--neon-orange); }
+.pbtn.ghost { background: transparent; color: var(--neon-teal); border-color: var(--neon-teal); box-shadow: 0 4px 0 var(--neon-teal); }
+@media (min-width: 760px) {
+  .qopts { grid-template-columns: 1fr 1fr; }
+  .stage { height: 250px; }
+  .hero-sp { width: 110px; }
+  .mon-sp { width: 180px; }
+  .hero-sp.pic { width: 130px; height: 152px; }
+  .mon-sp.pic { width: 200px; height: 200px; }
+  .bhud { font-size: .72rem; }
+}
+.bend { margin: auto; text-align: center; display: flex; flex-direction: column; gap: 18px; align-items: center; color: #fff; padding: 24px 8px; }
+.bend h2 { font-family: var(--pixel); font-size: clamp(1.4rem, 7vw, 2.4rem); margin: 0; line-height: 1.3; color: var(--neon-yellow); text-shadow: 4px 4px 0 var(--neon-orange); }
+.bend.lose h2 { color: var(--neon-red); text-shadow: 4px 4px 0 var(--night-3); }
+.bend p { margin: 0; font-weight: 600; max-width: 36ch; }
+.bend .sprite { width: 120px; }
+.bend .sprite img { height: 140px; object-fit: contain; image-rendering: auto; }
+.bend .sprite.down { opacity: .35; filter: grayscale(1); transform: rotate(-90deg); }
+.bend-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.hits-left { color: #fff; }
+.start-blink { font-family: var(--pixel); font-size: .6rem; color: var(--neon-teal); animation: blink 1s steps(1) infinite; }
+/* ---------- results ---------- */
+.results { display: grid; gap: 18px; grid-template-columns: 1fr; padding-block: 8px 20px; }
+.res-hero { background: var(--teal); color: #fff; padding: 22px; display: flex; gap: 18px; align-items: center; }
+.big-ring { --p: 0; width: 120px; height: 120px; flex: none; border-radius: 50%; border: var(--b); background: conic-gradient(var(--yellow) calc(var(--p) * 1%), #fff 0); display: grid; place-items: center; }
+.big-ring span { width: 88px; height: 88px; border-radius: 50%; background: #fff; color: var(--ink); border: var(--b); display: grid; place-items: center; font-weight: 800; font-size: 1.7rem; }
+.res-hero h2 { margin: 0 0 4px; font-size: 1.6rem; line-height: 1.15; font-weight: 800; text-wrap: balance; }
+.res-hero p { margin: 0; font-weight: 600; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.stat { border: var(--b); border-radius: 14px; padding: 8px 10px; background: #fff; box-shadow: 0 4px 0 var(--ink); }
+.stat span { display: block; font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.stat b { font-size: 1.3rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.stat:nth-child(1) { background: var(--yellow-tint); } .stat:nth-child(2) { background: var(--pink-tint); } .stat:nth-child(3) { background: var(--teal-tint); } .stat:nth-child(4) { background: var(--orange-tint); }
+.panel { padding: 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.panel h3 { margin: 0; font-size: 1.15rem; font-weight: 800; }
+.bars { display: flex; flex-direction: column; gap: 8px; }
+.bar-row { display: grid; grid-template-columns: 10.5em 1fr 3.2em; gap: 10px; align-items: center; font-weight: 700; font-size: .92rem; }
+.bar { height: 14px; border: 2px solid var(--ink); border-radius: 99px; overflow: hidden; background: #fff; }
+.bar i { display: block; height: 100%; background: var(--teal); }
+.bar i.low { background: var(--orange); }
+.bar-row .n { text-align: right; font-variant-numeric: tabular-nums; }
+.weak { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.weak li { border: 2.5px solid var(--ink); border-radius: 14px; padding: 10px 12px; background: var(--orange-tint); }
+.weak li b { display: block; }
+.weak li span { font-size: .9rem; }
+.weak li.good { background: var(--good-tint); }
+.review { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.review li { border-bottom: 2px solid var(--line); padding: 6px 0 8px; font-size: .95rem; }
+.review li:last-child { border-bottom: 0; }
+.review .you { color: var(--bad); font-weight: 700; }
+.review .key { color: var(--good); font-weight: 800; }
+.review .tag { font-size: .7rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.send { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-weight: 700; padding: 12px 14px; border: 2.5px solid var(--ink); border-radius: 14px; background: var(--teal-tint); }
+.send.err { background: var(--orange-tint); }
+.res-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.res-actions .btn { flex: 1 1 200px; }
+@media (min-width: 760px) {
+  .results { grid-template-columns: 1fr 1fr; align-items: start; }
+  .results .span { grid-column: 1 / -1; }
+}
+@media (max-width: 480px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .res-hero { flex-direction: column; text-align: center; }
+  .bar-row { grid-template-columns: 8.6em 1fr 3em; font-size: .85rem; }
+}
+footer { text-align: center; color: var(--muted); font-size: .82rem; padding: 14px 16px 20px; }
+footer a { color: var(--teal-ink); font-weight: 700; }
+canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+/* =================== MOLECULE DINER =================== */
+/* stage menu */
+.menu { display: flex; flex-direction: column; gap: 16px; padding-block: 8px 20px; max-width: 760px; width: 100%; margin: 0 auto; }
+.menu-head { background: var(--teal); color: #fff; padding: 18px 20px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.menu-head img { width: 76px; height: 92px; object-fit: contain; flex: none; filter: drop-shadow(3px 3px 0 rgba(31,42,46,.35)); }
+.menu-head h2 { margin: 0; font-size: 1.5rem; font-weight: 800; line-height: 1.15; }
+.menu-head p { margin: 2px 0 0; font-weight: 600; }
+.menu-head .pill { color: var(--ink); }
+.menu-head .grow { flex: 1; min-width: 180px; }
+.stg-list { display: flex; flex-direction: column; gap: 12px; }
+.stg { display: grid; grid-template-columns: 56px 1fr auto; gap: 14px; align-items: center; text-align: left; padding: 14px 16px; background: #fff; border: var(--b); border-radius: 18px; box-shadow: 0 5px 0 var(--ink); transition: transform .08s, box-shadow .08s; width: 100%; }
+.stg:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
+.stg .no { width: 56px; height: 56px; border: var(--b); border-radius: 14px; display: grid; place-items: center; font-family: var(--pixel); font-size: .9rem; background: var(--yellow); }
+.stg b { display: block; font-size: 1.1rem; font-weight: 800; line-height: 1.25; }
+.stg span.d { display: block; font-size: .88rem; color: var(--muted); font-weight: 600; line-height: 1.35; }
+.stg .st { font-family: var(--pixel); font-size: .55rem; text-align: right; line-height: 1.6; white-space: nowrap; }
+.stg .stg-stars { font-family: var(--font); font-size: 1.25rem; letter-spacing: 1px; color: var(--orange); -webkit-text-stroke: 1px var(--ink); }
+.stg .stg-stars .off { color: #fff; }
+.stg.locked { background: #F3F5F5; box-shadow: 0 3px 0 #B9C3C6; border-color: #B9C3C6; color: #8C989C; cursor: not-allowed; }
+.stg.locked .no { background: #E4E8E9; border-color: #B9C3C6; }
+.stg.locked span.d { color: #9AA6AA; }
+.stg.boss-stg { background: var(--night); color: #fff; }
+.stg.boss-stg .no { background: var(--neon-pink); }
+.stg.boss-stg span.d { color: #B8B2D6; }
+.stg.boss-stg b { font-family: var(--pixel); font-size: .75rem; color: var(--neon-yellow); line-height: 1.7; }
+.stg.boss-stg.locked { background: #2A2448; color: #8C86A8; box-shadow: 0 3px 0 #1a1630; }
+.stg .tag-new { background: var(--orange); border: 2px solid var(--ink); border-radius: 6px; padding: 4px 6px; color: var(--ink); }
+.menu-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.menu-actions .btn { flex: 1 1 220px; }
+.note { font-size: .85rem; color: var(--muted); font-weight: 600; margin: 0; text-align: center; }
+
+/* diner play screen */
+.play { display: flex; flex-direction: column; gap: 12px; padding-bottom: 12px; }
+.hud { background: var(--teal); color: #fff; padding: 10px 14px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.hud .stname { font-family: var(--pixel); font-size: .62rem; line-height: 1.6; color: var(--yellow); flex: 1; min-width: 150px; }
+.hud .stname span { display: block; color: #fff; font-size: .5rem; }
+.hud .stat2 { text-align: right; }
+.hud .stat2 small { display: block; font-size: .62rem; font-weight: 800; letter-spacing: .1em; opacity: .85; }
+.hud .stat2 b { font-family: var(--pixel); font-size: .78rem; }
+.counter { display: grid; gap: 14px; grid-template-columns: 1fr; align-items: start; }
+@media (min-width: 880px) { .counter { grid-template-columns: 310px 1fr; } }
+.order { padding: 14px; display: flex; flex-direction: column; gap: 10px; position: relative; overflow: hidden; min-height: 120px; }
+.cust { display: flex; align-items: flex-end; gap: 10px; }
+.cust .face { width: 84px; height: 105px; flex: none; }
+.cust .face svg { width: 100%; height: 100%; display: block; }
+.bubble { position: relative; background: var(--pink-tint); border: var(--b); border-radius: 16px; padding: 8px 12px; font-weight: 700; font-size: .95rem; line-height: 1.35; flex: 1; margin-bottom: 8px; }
+.bubble::before { content: ""; position: absolute; left: -11px; bottom: 14px; width: 16px; height: 16px; background: var(--pink-tint); border-left: var(--b); border-bottom: var(--b); transform: rotate(45deg); }
+.ticket { background: var(--yellow-tint); border: var(--b); border-radius: 6px; padding: 10px 12px 14px; position: relative;
+  -webkit-mask: radial-gradient(circle 6px at 50% 100%, transparent 98%, #000) 0 0 / 14px 100% repeat-x; mask: radial-gradient(circle 6px at 50% 100%, transparent 98%, #000) 0 0 / 14px 100% repeat-x; }
+.ticket small { display: flex; justify-content: space-between; gap: 8px; font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--teal-ink); }
+.ticket .dish { display: block; font-size: 1.45rem; font-weight: 800; line-height: 1.2; margin: 4px 0 2px; }
+.ticket .tnote { font-size: .82rem; color: var(--muted); font-weight: 600; display: block; }
+.fridge { border: 2.5px dashed var(--ink); border-radius: 12px; padding: 8px 10px; background: var(--teal-tint); display: flex; flex-direction: column; gap: 4px; }
+.fridge small { font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--teal-ink); }
+.fridge .items { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-weight: 800; }
+.fridge .ing { display: flex; flex-direction: column; align-items: center; gap: 2px; background: #fff; border: 2px solid var(--ink); border-radius: 10px; padding: 4px 8px; font-size: .85rem; }
+.fridge .ing svg { height: 56px; width: auto; max-width: 150px; }
+.fridge .plus { font-size: 1.2rem; }
+.steps { display: flex; gap: 6px; flex-wrap: wrap; font-size: .78rem; font-weight: 800; }
+.steps span { border: 2px solid var(--ink); border-radius: 99px; padding: 2px 10px; background: #fff; }
+.steps span.now { background: var(--yellow); }
+.steps span.done { background: var(--good-tint); }
+.patience { display: flex; align-items: center; gap: 8px; font-size: .75rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.pbar { flex: 1; height: 14px; border: 2.5px solid var(--ink); border-radius: 99px; overflow: hidden; background: #fff; }
+.pbar i { display: block; height: 100%; width: 100%; background: var(--good); transition: width .25s linear, background .3s; }
+.fb { border: var(--b); border-radius: 16px; padding: 10px 12px; font-weight: 700; font-size: .92rem; line-height: 1.4; }
+.fb.bad { background: var(--pink-tint); }
+.fb.good { background: var(--good-tint); }
+.fb .why { display: block; font-weight: 600; color: var(--muted); margin-top: 4px; }
+.done-ov { position: absolute; inset: 0; background: rgba(255,255,255,.95); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; padding: 16px; z-index: 4; }
+.done-ov h3 { font-family: var(--pixel); font-size: .95rem; color: var(--teal-ink); margin: 0; line-height: 1.5; text-shadow: 2px 2px 0 var(--yellow); }
+.done-ov h3.red { color: var(--bad); text-shadow: 2px 2px 0 var(--pink); }
+.done-ov p { margin: 0; font-weight: 700; }
+.done-ov .tip { font-family: var(--pixel); font-size: .7rem; background: var(--yellow); border: var(--b); border-radius: 10px; padding: 6px 10px; }
+.seats { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
+.seat { border: 2.5px solid var(--ink); border-radius: 12px; padding: 6px; background: #fff; min-height: 96px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: .78rem; font-weight: 700; text-align: center; }
+.seat.empty { border-style: dashed; color: var(--muted); background: var(--yellow-tint); }
+.seat svg { width: 100%; height: 70px; }
+.seat.flash { animation: seatflash .5s steps(2) 3; }
+@keyframes seatflash { 50% { background: var(--pink); } }
+
+/* work area */
+.build { padding: 12px; display: flex; flex-direction: column; gap: 10px; position: relative; }
+.board { position: relative; width: 100%; max-width: 580px; margin: 0 auto; }
+#plate { width: 100%; height: auto; display: block; touch-action: none; user-select: none; -webkit-user-select: none; }
+.tools { display: flex; gap: 10px; justify-content: space-between; width: 100%; max-width: 580px; margin: 0 auto; }
+.tools .btn.serve { flex: 1; max-width: 260px; }
+.tools .btn svg { width: 20px; height: 20px; }
+.howto { margin: 0; font-size: .85rem; font-weight: 600; color: var(--muted); line-height: 1.45; max-width: 580px; margin-inline: auto; }
+.howto b { color: var(--ink); }
+.ptoast { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); background: var(--ink); color: #fff; font-weight: 700; font-size: .9rem; padding: 8px 14px; border-radius: 12px; max-width: 92%; text-align: center; z-index: 3; pointer-events: none; }
+.wtitle { margin: 0; font-weight: 800; font-size: 1.05rem; }
+.stations { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.station { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left; padding: 10px; border: var(--b); border-radius: 14px; background: #fff; box-shadow: 0 4px 0 var(--ink); transition: transform .08s, box-shadow .08s; }
+.station:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.station svg, .station img { width: 48px; height: 48px; object-fit: contain; }
+.station b { font-size: .95rem; line-height: 1.2; }
+.station span { font-size: .78rem; font-weight: 600; color: var(--muted); line-height: 1.3; }
+.station.wrong { background: var(--pink-tint); }
+.station.right { background: var(--good-tint); }
+.station:disabled { cursor: default; }
+.critic-q { font-weight: 800; font-size: 1.1rem; margin: 0; line-height: 1.4; }
+.show-dish { border: var(--b); border-radius: 16px; background: #fff; padding: 8px; display: flex; justify-content: center; }
+.show-dish svg { height: 130px; width: auto; max-width: 100%; }
+.dishes { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.dish-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; border: var(--b); border-radius: 16px; background: #fff; box-shadow: 0 4px 0 var(--ink); font-weight: 800; transition: transform .08s, box-shadow .08s; }
+.dish-btn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.dish-btn svg { width: 100%; height: 110px; }
+.dish-btn .lbl { font-family: var(--pixel); font-size: .55rem; }
+.dish-btn.right, .topt.right { background: var(--good-tint); border-color: var(--good); }
+.dish-btn.wrong, .topt.wrong { background: var(--pink-tint); border-color: var(--bad); }
+.dish-btn:disabled, .topt:disabled { cursor: default; }
+.topts { display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 640px) { .topts { grid-template-columns: 1fr 1fr; } }
+.topt { display: flex; gap: 10px; align-items: center; text-align: left; padding: 10px 12px; border: var(--b); border-radius: 14px; background: #fff; box-shadow: 0 4px 0 var(--ink); font-weight: 700; font-size: 1rem; line-height: 1.4; }
+.topt .k { flex: none; width: 28px; height: 28px; border: 2px solid var(--ink); border-radius: 8px; display: grid; place-items: center; font-family: var(--pixel); font-size: .6rem; background: var(--yellow); }
+
+/* stage intro */
+.intro { padding: 20px; display: flex; flex-direction: column; gap: 12px; max-width: 640px; margin: 0 auto; width: 100%; }
+.intro h2 { margin: 0; font-size: 1.5rem; font-weight: 800; }
+.intro ul { margin: 0; padding-left: 1.2em; font-weight: 600; line-height: 1.5; }
+.intro li { margin: 4px 0; }
+.intro .goal { font-weight: 800; background: var(--yellow-tint); border: 2.5px solid var(--ink); border-radius: 12px; padding: 8px 12px; }
+
+/* boss tweaks: inspector faces the chef */
+.mon-sp.pic { width: 130px; height: 170px; }
+.hero-sp.pic { width: 120px; height: 150px; }
+@media (min-width: 760px) { .mon-sp.pic { width: 160px; height: 210px; } .hero-sp.pic { width: 150px; height: 180px; } }
+.bolt svg { overflow: visible; }
+.insp-side { flex: 1; }
+.chef-side { align-items: flex-end; text-align: right; }
+#scr-boss .mon-sp img { transform: none; }
+#scr-boss .hero-sp img, #scr-boss .hero-sp svg { transform: scaleX(-1); }
+#scr-boss .bolt { left: auto; right: 22%; }
+#scr-boss .bolt.fly { animation: fly2 .45s steps(6) forwards; }
+@keyframes fly2 { 0% { opacity: 1; right: 22%; transform: rotate(0); } 90% { opacity: 1; } 100% { opacity: 0; right: 66%; transform: rotate(-360deg); } }
+#scr-boss .hero-sp.atk { animation: lunge-l2 .45s steps(4); }
+#scr-boss .mon-sp.atk { animation: lunge-r2 .5s steps(4); }
+@keyframes lunge-l2 { 50% { transform: translateX(-40px); } }
+@keyframes lunge-r2 { 50% { transform: translateX(60px) scale(1.08); } }
+
+@media (max-width: 600px) {
+  .wrap { padding: 10px 10px 14px; }
+  .hud { padding: 8px 12px; }
+  .order { padding: 10px; gap: 8px; }
+  .cust .face { width: 60px; height: 75px; }
+  .bubble { font-size: .85rem; padding: 6px 10px; }
+  .ticket { padding: 6px 10px 12px; }
+  .ticket .dish { font-size: 1.2rem; }
+  .build { padding: 10px; }
+  .btn { padding: 11px 14px; }
+  .show-dish svg { height: 100px; }
+  .dish-btn svg { height: 90px; }
+  .stg { grid-template-columns: 46px 1fr auto; gap: 10px; padding: 12px; }
+  .stg .no { width: 46px; height: 46px; font-size: .75rem; }
+}
+</style>
+</head>
+<body>
+
+<audio id="mus-menu" loop preload="none" src="Retro%20Game%20Loop.mp3"></audio>
+<audio id="mus-diner" loop preload="none" src="Rush%20Hour.mp3"></audio>
+<audio id="mus-boss" loop preload="none" src="Pixel%20Battle.mp3"></audio>
+
+<header class="topbar">
+  <a class="brand" href="https://scienceiskhool.github.io/scienceiskhool/" target="_blank" rel="noopener">
+    <img src="https://scienceiskhool.github.io/scienceiskhool/assets/img/head.png" alt="" onerror="this.style.visibility='hidden'">
+    <span><b>Molecule Diner</b><small>Science is Khool · Organic chemistry</small></span>
+  </a>
+  <button class="icon-btn" id="btn-quit" type="button" aria-label="Back to stage menu" title="Stage menu" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/></svg>
+  </button>
+  <button class="icon-btn" id="btn-music" type="button" aria-label="Music on" title="Music">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+  </button>
+  <button class="icon-btn" id="btn-sound" type="button" aria-label="Sound effects on" title="Sound effects">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
+  </button>
+</header>
+
+<main class="wrap">
+
+  <!-- START -->
+  <section id="scr-start" class="start">
+    <div class="card hero">
+      <div class="hero-top">
+        <div class="hero-title"><span class="pill">Sec 3–4 Chemistry · Organic chemistry</span>
+        <h1>Molecule <em>Diner</em></h1></div>
+        <img class="cast" src="hero%20chef.png" alt="The chef" onerror="this.remove()">
+      </div>
+      <p>The diner's busiest night! Customers order molecules and you're the chef. Build each dish atom by atom, cook with the right reagents, impress the food critic, then survive the Health Inspector.</p>
+      <div class="demo" aria-label="Example order">
+        <small>Example order · Ethanol</small>
+        <div id="demo-mol" style="line-height:0"></div>
+      </div>
+      <div class="modes">
+        <div class="mode-card"><b>Diner stages</b><span>Build displayed formulae before your customers run out of patience.</span></div>
+        <div class="mode-card dark"><b>BOSS FIGHT</b><span>The Health Inspector's surprise check. 3 hearts.</span></div>
+      </div>
+    </div>
+
+    <form class="card form" id="form-start" novalidate>
+      <h2>Ready, chef?</h2>
+      <div class="fields">
+        <label class="f full" for="in-name">Name<input id="in-name" name="name" maxlength="60" autocomplete="name" required></label>
+        <label class="f" for="in-cls">Class<select id="in-cls" name="cls" required><option value="">Choose…</option></select></label>
+        <label class="f" for="in-reg">Register no.<input id="in-reg" name="reg" inputmode="numeric" pattern="[0-9]*" maxlength="2" required></label>
+      </div>
+      <div class="grp"><span>Your course</span>
+        <div class="seg" id="seg-tier">
+          <button class="chip" type="button" data-tier="cs" aria-pressed="false">Combined Science<small>5086 / 5088</small></button>
+          <button class="chip" type="button" data-tier="pure" aria-pressed="false">Pure Chemistry<small>6092</small></button>
+        </div>
+      </div>
+      <p class="form-err" id="form-err" role="alert"></p>
+      <button class="btn big" type="button" id="btn-go">Open the diner ▶</button>
+      <ul class="how">
+        <li>Hold and drag atoms onto the plate. Tap between two atoms to bond them.</li>
+        <li>Works on phones, iPads and laptops.</li>
+        <li>Your stage progress is saved on this device.</li>
+      </ul>
+    </form>
+  </section>
+
+  <!-- STAGE MENU -->
+  <section id="scr-menu" class="menu" hidden>
+    <div class="card menu-head">
+      <img src="hero%20chef.png" alt="" onerror="this.remove()">
+      <div class="grow"><span class="pill" id="m-tier">Combined Science</span><h2 id="m-hi">Welcome, chef!</h2><p id="m-sub">Clear each stage to unlock the next.</p></div>
+    </div>
+    <div class="stg-list" id="m-list"></div>
+    <div class="menu-actions">
+      <button class="btn big" type="button" id="btn-continue">Continue the shift ▶</button>
+      <button class="btn big alt" type="button" id="btn-player">Change player</button>
+    </div>
+    <p class="note">Progress is saved on this device for this name, class and register number.</p>
+  </section>
+
+  <!-- STAGE INTRO -->
+  <section id="scr-intro" hidden>
+    <div class="card intro">
+      <span class="pill" id="i-pill" style="align-self:flex-start">Stage 1</span>
+      <h2 id="i-title">Build Counter</h2>
+      <ul id="i-list"></ul>
+      <p class="goal" id="i-goal"></p>
+      <button class="btn big" type="button" id="btn-istart">Start the shift ▶</button>
+    </div>
+  </section>
+
+  <!-- DINER PLAY -->
+  <section id="scr-play" class="play" hidden>
+    <div class="card hud">
+      <div class="stname" id="h-stage">STAGE 1 · BUILD COUNTER<span id="h-tier">COMBINED SCIENCE</span></div>
+      <div class="stat2"><small id="h-olbl">ORDER</small><b id="h-order">1/8</b></div>
+      <div class="stat2"><small>SERVED</small><b id="h-served">0</b></div>
+      <div class="stat2"><small>TIPS</small><b id="h-tips">$0</b></div>
+    </div>
+    <div class="counter">
+      <section class="card order" id="o-card" aria-live="polite">
+        <div class="cust"><div class="face" id="o-face"></div><div class="bubble" id="o-say"></div></div>
+        <div class="ticket" id="o-ticket">
+          <small><span id="t-table">Table 1</span><span id="t-mode">By name</span></small>
+          <span class="dish" id="t-dish"></span>
+          <span class="tnote" id="t-note"></span>
+        </div>
+        <div class="fridge" id="o-fridge" hidden><small>In the fridge</small><div class="items" id="o-items"></div></div>
+        <div class="steps" id="o-steps" hidden></div>
+        <div class="seats" id="o-seats" hidden></div>
+        <div class="patience"><span id="o-plbl">Patience</span><div class="pbar"><i id="o-pbar"></i></div></div>
+        <div id="o-fb" class="fb" hidden></div>
+        <div class="done-ov" id="o-done" hidden>
+          <h3 id="d-title">ORDER UP!</h3>
+          <p id="d-msg"></p>
+          <span class="tip" id="d-tip"></span>
+          <button class="btn" type="button" id="btn-next">Next customer ▶</button>
+        </div>
+      </section>
+
+      <section class="card build" id="w-card">
+        <div id="w-stations" hidden>
+          <p class="wtitle" id="w-stitle">Pick the kitchen station</p>
+          <div class="stations" id="w-slist"></div>
+        </div>
+        <div id="w-plate" hidden>
+          <div class="board">
+            <svg id="plate" viewBox="0 0 492 494" role="img" aria-label="Build area: drag atoms onto the plate"></svg>
+            <div class="ptoast" id="p-toast" hidden></div>
+          </div>
+          <div class="tools">
+            <button class="btn alt" type="button" id="btn-clear">↺ Clear</button>
+            <button class="btn serve" type="button" id="btn-serve">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17h16"/><path d="M5 17a7 7 0 0 1 14 0"/><path d="M12 7V5"/><path d="M10 5h4"/><path d="M3 20h18"/></svg>
+              Serve
+            </button>
+          </div>
+          <p class="howto"><b>Hold and drag</b> atoms onto the plate. <b>Tap between two atoms</b> to bond them: tap again for a double bond, once more to remove it. Atoms two dots apart in a straight line can bond too (tap the empty dot between them). Drag an atom back to the tray to remove it.</p>
+        </div>
+        <div id="w-critic" hidden>
+          <div class="show-dish" id="c-show" hidden></div>
+          <div class="dishes" id="c-dishes"></div>
+          <div class="topts" id="c-opts"></div>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <!-- BOSS -->
+  <section id="scr-boss" class="boss" hidden>
+    <div class="arena">
+      <div class="stars"></div>
+      <div class="bhud">
+        <div class="hp-who insp-side"><span class="bname"><span id="b-name">HEALTH INSPECTOR</span> <span class="hits-left" id="b-left"></span></span><div class="hpbar"><i id="b-hp"></i></div></div>
+        <div class="hp-who chef-side"><span class="hname">CHEF</span><div class="hearts" id="b-hearts"></div></div>
+      </div>
+      <div class="stage" id="b-stage">
+        <div class="sprite mon-sp" id="b-mon"></div>
+        <div class="bolt" id="b-bolt"></div>
+        <div class="sprite hero-sp" id="b-hero"></div>
+        <div class="flash" id="b-flash"></div>
+      </div>
+      <div class="charge" id="b-charge"><span>THE INSPECTOR IS WRITING YOU UP</span><div class="cbar"><i id="b-cbar"></i></div><b id="b-secs">45</b></div>
+    </div>
+    <div class="qbox">
+      <div class="qtop"><p class="qtype" id="b-qtype">INSPECTION</p></div>
+      <p class="bq" id="b-qtext"></p>
+      <div class="qopts" id="b-opts"></div>
+      <div class="qfb" id="b-fb" hidden aria-live="polite"><p id="b-fb-msg"></p><button class="pbtn" type="button" id="b-next">NEXT ▶</button></div>
+    </div>
+  </section>
+
+  <section id="scr-bend" class="bend" hidden>
+    <h2 id="be-title">VICTORY!</h2>
+    <div class="sprite" id="be-sprite"></div>
+    <p id="be-msg"></p>
+    <span class="start-blink">PRESS BUTTON TO CONTINUE</span>
+    <div class="bend-btns">
+      <button class="pbtn" type="button" id="be-retry" hidden>TRY AGAIN ↻</button>
+      <button class="pbtn" type="button" id="be-go">SEE RESULTS ▶</button>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="scr-result" class="results" hidden>
+    <div class="card res-hero span">
+      <div class="big-ring" id="res-ring"><span id="res-pct">0%</span></div>
+      <div><h2 id="res-title">Shift complete!</h2><p id="res-sub"></p></div>
+    </div>
+    <div class="stats span">
+      <div class="stat"><span id="res-l1">Served</span><b id="res-correct">0</b></div>
+      <div class="stat"><span>Accuracy</span><b id="res-acc">0%</b></div>
+      <div class="stat"><span>Time</span><b id="res-time">0:00</b></div>
+      <div class="stat"><span id="res-l4">Tips</span><b id="res-points">$0</b></div>
+    </div>
+    <div class="card panel">
+      <h3 id="res-bars-h">By dish</h3>
+      <div class="bars" id="res-bars"></div>
+      <h3>Work on these</h3>
+      <ul class="weak" id="res-weak"></ul>
+    </div>
+    <div class="card panel">
+      <h3>Review</h3>
+      <ul class="review" id="res-review"></ul>
+    </div>
+    <div class="send span" id="send" aria-live="polite"><span id="send-msg">Sending your results…</span><button class="btn alt sm" id="btn-resend" type="button" hidden>Try again</button></div>
+    <div class="res-actions span">
+      <button class="btn big" id="btn-rnext" type="button">Next stage ▶</button>
+      <button class="btn big alt" id="btn-again" type="button">Play again ↻</button>
+      <button class="btn big alt" id="btn-menu" type="button">Stage menu</button>
+    </div>
+  </section>
+</main>
+
+<footer>Made for <a href="https://www.instagram.com/scienceiskhool/" target="_blank" rel="noopener">@scienceiskhool</a></footer>
+<canvas id="confetti" hidden></canvas>
+<script>
+(function () {
+"use strict";
+
+/* =================== SETTINGS (safe to edit) =================== */
+var SUBMIT_URL = "https://script.google.com/macros/s/AKfycbxCTjRCQzLlWXmmY-5R0p75WCmeFLzC9ZM3gNbGRXpcc_d9qHMXdyCn12B4dHpnrBWe/exec";
+var SHEET_TAB = "Molecule Diner";      // tab name in your Google Sheet
+var BOSS_NAME = "HEALTH INSPECTOR";
+var MUSIC_VOLUME = 0.25;               // 0 to 1
+var HITS_TO_WIN = { cs: 6, pure: 8 };  // boss hits needed
+var BOSS_SECS = { cs: 50, pure: 45 };  // seconds per boss question
+var CRIT_SECS = 15;                    // answer within this for a critical hit (bonus points only)
+var HEARTS = 3;
+var HURT_MS = 1600;
+var ORDERS = { s1: 8, s2: 4, s3: 6, s4: 8 };   // orders per stage
+var PASS = { s1: 5, s2: 3, s3: 4, s4: 5 };     // orders served to clear a stage (1 star)
+var PATIENCE = { base: 35, perAtom: 5, cs: 1.25, table: 1.6, critic: 45 }; // seconds
+var IMG = {                             // image files in the same folder (missing files fall back to drawings)
+  hero: "hero%20chef.png", heroHurt: "hero%20chef%20hurt.png",
+  boss: "inspector.png", bossHurt: "inspector%20hurt.png", bossAtk: "inspector%20attack.png",
+  critic: "critic.png"
+};
+var CUSTOMERS = 10;                     // customer1.png … customer10.png
+// face position on each customer image: [centre x, eye y, mouth y] (images are 300 px tall)
+var FACE = [[168,150,182],[130,150,182],[128,150,182],[118,140,178],[122,132,166],[112,140,170],[124,146,180],[102,152,182],[121,152,184],[122,162,192]];
+var CUST_W = [256,239,252,234,261,229,237,205,237,243];
+var CLASSES = [];
+["S1", "S2", "S3", "S4"].forEach(function (l) {
+  ["Charity", "Courage", "Faith", "Hope", "Humility", "Integrity", "Love", "Respect", "Joy"].forEach(function (v) { CLASSES.push(l + " " + v); });
+});
+CLASSES.push("S5 Faith", "Other");
+
+/* =================== HELPERS =================== */
+function $(id) { return document.getElementById(id); }
+function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+function store(k, v) { try { localStorage.setItem("moldiner_" + k, JSON.stringify(v)); } catch (e) {} }
+function load(k, d) { try { var v = localStorage.getItem("moldiner_" + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } }
+function fmtTime(s) { s = Math.round(s); return Math.floor(s / 60) + ":" + ("0" + s % 60).slice(-2); }
+function stripTags(h) { var d = document.createElement("div"); d.innerHTML = h; return d.textContent; }
+// "C2H5OH" -> C<sub>2</sub>H<sub>5</sub>OH ; "CnH2n+2" handled by callers
+function fx(f) { return esc(f).replace(/([A-Za-z\)])(\d+)/g, '$1<span class="sub">$2</span>'); }
+var SUBS = "₀₁₂₃₄₅₆₇₈₉";
+function fxt(f) { return f.replace(/([A-Za-z\)])(\d+)/g, function (m, a, d) { return a + d.split("").map(function (x) { return SUBS[+x]; }).join(""); }); }
+
+/* =================== CHEMISTRY ENGINE =================== */
+var EL = {
+  C: { v: 4, fill: "#1F2A2E", text: "#fff", name: "carbon" },
+  H: { v: 1, fill: "#fff", text: "#1F2A2E", name: "hydrogen" },
+  O: { v: 2, fill: "#FF8243", text: "#1F2A2E", name: "oxygen" },
+  Br: { v: 1, fill: "#9A3F22", text: "#fff", name: "bromine" },
+  Cl: { v: 1, fill: "#86E0A8", text: "#1F2A2E", name: "chlorine" }
+};
+// tiny SMILES reader: C O Br Cl, "=" double bonds, (branches). Hydrogens are implicit.
+function parseSmi(s) {
+  var atoms = [], bonds = [], prev = -1, stack = [], order = 1, i = 0;
+  while (i < s.length) {
+    var ch = s[i];
+    if (ch === "(") { stack.push(prev); i++; continue; }
+    if (ch === ")") { prev = stack.pop(); i++; continue; }
+    if (ch === "=") { order = 2; i++; continue; }
+    var two = s.substr(i, 2), el = (two === "Br" || two === "Cl") ? two : ch; i += el.length;
+    atoms.push(el); var k = atoms.length - 1;
+    if (prev >= 0) bonds.push([prev, k, order]);
+    prev = k; order = 1;
+  }
+  return { atoms: atoms, bonds: bonds };
+}
+function adjOf(g) { var adj = g.atoms.map(function () { return []; }); g.bonds.forEach(function (b) { adj[b[0]].push([b[1], b[2]]); adj[b[1]].push([b[0], b[2]]); }); return adj; }
+// canonical string of a heavy-atom tree (same molecule = same string, however it is drawn)
+function canonOf(g) {
+  var n = g.atoms.length; if (!n) return "";
+  var adj = adjOf(g);
+  function rec(u, p) { return g.atoms[u] + "(" + adj[u].filter(function (e) { return e[0] !== p; }).map(function (e) { return (e[1] === 2 ? "=" : "-") + rec(e[0], u); }).sort().join(",") + ")"; }
+  var best = null; for (var r = 0; r < n; r++) { var c = rec(r, -1); if (best === null || c < best) best = c; }
+  return best;
+}
+var CANON = {}; function cs(smi) { return CANON[smi] || (CANON[smi] = canonOf(parseSmi(smi))); }
+function hCounts(g) { var adj = adjOf(g); return g.atoms.map(function (el, i) { return EL[el].v - adj[i].reduce(function (s, e) { return s + e[1]; }, 0); }); }
+function countsOf(g) { var c = { C: 0, H: 0, O: 0, Br: 0, Cl: 0 }; g.atoms.forEach(function (el) { c[el]++; }); hCounts(g).forEach(function (h) { c.H += h; }); return c; }
+function formulaOf(c) { var s = ""; ["C", "H", "Br", "Cl", "O"].forEach(function (e) { if (c[e]) s += e + (c[e] > 1 ? c[e] : ""); }); return s; }
+function smiFormula(smi) { return formulaOf(countsOf(parseSmi(smi))); }
+function atomsInSmi(smi) { var c = countsOf(parseSmi(smi)), t = 0; for (var e in c) t += c[e]; return t; }
+
+// what kind of molecule is it? {cls, nC, straight, acid, alc}
+function longestTree(nodes, nb) {
+  if (!nodes.length) return 0;
+  function far(s) { var d = {}, q = [s]; d[s] = 1; var best = s; while (q.length) { var u = q.shift(); if (d[u] > d[best]) best = u; nb[u].forEach(function (v) { if (!d[v]) { d[v] = d[u] + 1; q.push(v); } }); } return { node: best, len: d[best] }; }
+  return far(far(nodes[0]).node).len;
+}
+function compsOf(nodes, nb) { var seen = {}, out = []; nodes.forEach(function (n) { if (seen[n]) return; var c = [], q = [n]; seen[n] = 1; while (q.length) { var u = q.shift(); c.push(u); nb[u].forEach(function (v) { if (!seen[v]) { seen[v] = 1; q.push(v); } }); } out.push(c); }); return out; }
+function classify(g) {
+  var adj = adjOf(g), n = g.atoms.length, i;
+  var C = [], O = [], halo = 0;
+  for (i = 0; i < n; i++) { if (g.atoms[i] === "C") C.push(i); else if (g.atoms[i] === "O") O.push(i); else halo++; }
+  var res = { cls: "other", nC: C.length };
+  if (!C.length) return res;
+  var nb = {}, ccD = 0; C.forEach(function (c) { nb[c] = adj[c].filter(function (e) { return g.atoms[e[0]] === "C"; }).map(function (e) { if (e[1] === 2) ccD += .5; return e[0]; }); });
+  var parts = compsOf(C, nb);
+  var carbonylO = O.filter(function (o) { return adj[o].some(function (e) { return e[1] === 2; }); });
+  function straightPart(p) { return longestTree(p, nb) === p.length; }
+  if (!O.length) {
+    if (parts.length !== 1) return res;
+    res.straight = straightPart(C);
+    if (halo) { if (ccD === 0) res.cls = "halo"; return res; }
+    if (ccD === 0) res.cls = "alkane"; else if (ccD === 1) res.cls = "alkene";
+    return res;
+  }
+  if (ccD || halo) return res;
+  if (O.length === 1 && !carbonylO.length && parts.length === 1) {
+    var on = adj[O[0]];
+    if (on.length === 1 && g.atoms[on[0][0]] === "C") { res.cls = "alcohol"; res.straight = straightPart(C); }
+    return res;
+  }
+  if (O.length === 2 && carbonylO.length === 1) {
+    var cO = carbonylO[0], cC = adj[cO][0][0], sO = O.filter(function (o) { return o !== cO; })[0];
+    if (g.atoms[cC] !== "C") return res;
+    var sn = adj[sO].map(function (e) { return e[0]; });
+    if (sn.indexOf(cC) < 0) return res;
+    var other = sn.filter(function (x) { return x !== cC; });
+    if (!other.length && parts.length === 1) { res.cls = "acid"; res.straight = straightPart(C) && nb[cC].length <= 1; return res; }
+    if (other.length === 1 && g.atoms[other[0]] === "C" && parts.length === 2) {
+      var pa = parts.filter(function (p) { return p.indexOf(cC) >= 0; })[0], pb = parts.filter(function (p) { return p.indexOf(cC) < 0; })[0];
+      res.cls = "ester"; res.acid = pa.length; res.alc = pb.length;
+      res.straight = straightPart(pa) && straightPart(pb) && nb[cC].length <= 1 && nb[other[0]].length <= 1;
+    }
+  }
+  return res;
+}
+var CLASSNAME = { alkane: "an alkane", alkene: "an alkene", alcohol: "an alcohol", acid: "a carboxylic acid", ester: "an ester", halo: "a bromine or chlorine compound", other: "something off the menu" };
+var GROUPTIP = {
+  alkane: "Alkanes have only single bonds.",
+  alkene: "Alkenes need one C=C double bond.",
+  alcohol: "Alcohols have an –O–H group joined to a carbon.",
+  acid: "Carboxylic acids have a C=O and an O–H on the same carbon (–COOH).",
+  ester: "Esters have a C=O, with the other O joined to a second carbon chain (–COO–).",
+  halo: "Check where the bromine or chlorine atoms go."
+};
+
+// every molecule the game knows by name
+var KNOWN = [
+  ["C", "methane"], ["CC", "ethane"], ["CCC", "propane"], ["CCCC", "butane"], ["CC(C)C", "methylpropane"],
+  ["C=C", "ethene"], ["C=CC", "propene"], ["C=CCC", "but-1-ene"], ["CC=CC", "but-2-ene"], ["C=C(C)C", "methylpropene"],
+  ["CO", "methanol"], ["CCO", "ethanol"], ["CCCO", "propan-1-ol"], ["CC(O)C", "propan-2-ol"],
+  ["CCCCO", "butan-1-ol"], ["CCC(O)C", "butan-2-ol"], ["CC(C)CO", "2-methylpropan-1-ol"], ["CC(C)(C)O", "2-methylpropan-2-ol"],
+  ["C(=O)O", "methanoic acid"], ["CC(=O)O", "ethanoic acid"], ["CCC(=O)O", "propanoic acid"], ["CCCC(=O)O", "butanoic acid"], ["CC(C)C(=O)O", "methylpropanoic acid"],
+  ["COC=O", "methyl methanoate"], ["CCOC=O", "ethyl methanoate"], ["CCCOC=O", "propyl methanoate"],
+  ["CC(=O)OC", "methyl ethanoate"], ["CC(=O)OCC", "ethyl ethanoate"], ["CC(=O)OCCC", "propyl ethanoate"],
+  ["CCC(=O)OC", "methyl propanoate"], ["CCC(=O)OCC", "ethyl propanoate"], ["CCCC(=O)OC", "methyl butanoate"],
+  ["CCl", "chloromethane"], ["ClCCl", "dichloromethane"], ["BrCCBr", "1,2-dibromoethane"], ["BrCC(Br)C", "1,2-dibromopropane"], ["CCBr", "bromoethane"]
+];
+var NAMES = {}; KNOWN.forEach(function (k) { NAMES[cs(k[0])] = k[1]; });
+function nameOfSmi(smi) { return NAMES[cs(smi)] || smi; }
+
+/* ---------- layout: draw a displayed formula from SMILES on the grid ---------- */
+var DIRS = { r: [1, 0], l: [-1, 0], u: [0, -1], d: [0, 1] };
+function layoutSmi(smi) {
+  var g = parseSmi(smi), n = g.atoms.length, adj = adjOf(g), hc = hCounts(g);
+  // main chain = longest path, never through a C=O oxygen; most carbons wins a tie
+  var skip = {}; for (var i = 0; i < n; i++) if (g.atoms[i] === "O" && adj[i].some(function (e) { return e[1] === 2; })) skip[i] = 1;
+  var best = null;
+  function paths(u, seen, path) {
+    var ext = false;
+    adj[u].forEach(function (e) { var v = e[0]; if (seen[v] || skip[v]) return; ext = true; seen[v] = 1; path.push(v); paths(v, seen, path); path.pop(); delete seen[v]; });
+    if (!ext) {
+      var nc = path.filter(function (x) { return g.atoms[x] === "C"; }).length, sc = path.length * 100 + nc * 10 + (g.atoms[path[0]] === "C" ? 1 : 0);
+      if (!best || sc > best.sc) best = { sc: sc, p: path.slice() };
+    }
+  }
+  for (i = 0; i < n; i++) if (!skip[i]) { var s = {}; s[i] = 1; paths(i, s, [i]); }
+  if (!best) best = { p: [0] };
+  var chain = best.p, pos = {}, used = {}, atoms = [], bonds = [], occ = {};
+  function put(id, el, x, y) { var k = x + "," + y; atoms.push({ id: id, el: el, x: x, y: y }); occ[k] = 1; return k; }
+  function freeAt(x, y) { return !occ[x + "," + y]; }
+  chain.forEach(function (a, j) { pos[a] = [j * 1, 0]; put(a, g.atoms[a], j, 0); used[a] = {}; });
+  chain.forEach(function (a, j) { if (j) { bonds.push([chain[j - 1], a, orderBetween(chain[j - 1], a), 1]); used[a].l = 1; used[chain[j - 1]].r = 1; } });
+  function orderBetween(a, b) { for (var k = 0; k < adj[a].length; k++) if (adj[a][k][0] === b) return adj[a][k][1]; return 1; }
+  // branches off the chain go up, then down; carbon branches sit two dots away (long bond) so their H atoms don't clash
+  function placeBranch(b, from, dir) {
+    var hasHeavyKids = adj[b].some(function (e) { return e[0] !== from; });
+    var dist = (g.atoms[b] === "C") ? 2 : 1, p = pos[from], v = DIRS[dir];
+    pos[b] = [p[0] + v[0] * dist, p[1] + v[1] * dist]; put(b, g.atoms[b], pos[b][0], pos[b][1]);
+    used[b] = {}; used[b][{ u: "d", d: "u", l: "r", r: "l" }[dir]] = 1; used[from][dir] = 1;
+    bonds.push([from, b, orderBetween(from, b), dist]);
+    adj[b].forEach(function (e) { if (e[0] !== from && pos[e[0]] === undefined) placeBranch(e[0], b, dir); });
+  }
+  chain.forEach(function (a) {
+    var dirs = ["u", "d"];
+    adj[a].forEach(function (e) { var b = e[0]; if (pos[b] !== undefined) return; placeBranch(b, a, dirs.shift() || "u"); });
+  });
+  // hydrogens fill the free directions
+  var hid = 1000;
+  atoms.slice().forEach(function (at) {
+    var a = at.id, k = hc[a], p = pos[a], order;
+    var j = chain.indexOf(a);
+    if (j === 0) order = ["l", "u", "d", "r"]; else if (j === chain.length - 1 && j > 0) order = ["r", "u", "d", "l"]; else order = ["u", "d", "l", "r"];
+    if (j < 0) { var back = Object.keys(used[a])[0]; order = ["u", "d", "l", "r"].filter(function (d) { return d !== back; }); if (back === "d") order = ["u", "l", "r"]; if (back === "u") order = ["d", "l", "r"]; }
+    order.forEach(function (d) {
+      if (k <= 0 || used[a][d]) return;
+      var x = p[0] + DIRS[d][0], y = p[1] + DIRS[d][1]; if (!freeAt(x, y)) return;
+      var h = hid++; put(h, "H", x, y); pos[h] = [x, y]; bonds.push([a, h, 1, 1]); used[a][d] = 1; k--;
+    });
+  });
+  var minx = 1e9, miny = 1e9, maxx = -1e9, maxy = -1e9;
+  atoms.forEach(function (a) { minx = Math.min(minx, a.x); miny = Math.min(miny, a.y); maxx = Math.max(maxx, a.x); maxy = Math.max(maxy, a.y); });
+  var P = {}; atoms.forEach(function (a) { a.x -= minx; a.y -= miny; P[a.id] = a; });
+  return { atoms: atoms, bonds: bonds.map(function (b) { return { a: P[b[0]], b: P[b[1]], o: b[2] }; }), w: maxx - minx, h: maxy - miny };
+}
+
+/* ---------- drawing ---------- */
+var R = 21;
+function atomG(el, x, y, opt) {
+  opt = opt || {}; var e = EL[el], s = '<g' + (opt.ghost ? ' opacity=".75"' : '') + '>';
+  var small = el.length > 1;
+  s += '<circle cx="' + x + '" cy="' + y + '" r="' + R + '" fill="' + e.fill + '" stroke="' + (opt.bad ? "#E2463A" : "#1F2A2E") + '" stroke-width="' + (opt.bad ? 5 : 3) + '"/>';
+  s += '<text x="' + x + '" y="' + (y + (small ? 6 : 7.5)) + '" text-anchor="middle" font-family="Open Sans, sans-serif" font-weight="800" font-size="' + (small ? 17 : 21) + '" fill="' + e.text + '">' + el + '</text>';
+  if (opt.badge != null) {
+    var left = opt.badge, bx = x + 16, by = y - 16, fill, t;
+    if (left === 0) { fill = "#1E9E62"; t = "✓"; } else if (left < 0) { fill = "#E2463A"; t = "!"; } else { fill = "#FCE883"; t = left; }
+    s += '<circle cx="' + bx + '" cy="' + by + '" r="10.5" fill="' + fill + '" stroke="#1F2A2E" stroke-width="2.5"/>';
+    s += '<text x="' + bx + '" y="' + (by + 4.5) + '" text-anchor="middle" font-family="Open Sans, sans-serif" font-weight="800" font-size="13" fill="' + (left <= 0 ? "#fff" : "#1F2A2E") + '">' + t + '</text>';
+  }
+  return s + "</g>";
+}
+function bondG(a, b, order, color, op) {
+  var dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L, px = -uy, py = ux, s = "";
+  var x1 = a.x + ux * (R - 2), y1 = a.y + uy * (R - 2), x2 = b.x - ux * (R - 2), y2 = b.y - uy * (R - 2);
+  (order === 2 ? [-5, 5] : [0]).forEach(function (o) { s += '<line x1="' + (x1 + px * o) + '" y1="' + (y1 + py * o) + '" x2="' + (x2 + px * o) + '" y2="' + (y2 + py * o) + '" stroke="' + (color || "#1F2A2E") + '" stroke-width="4" stroke-linecap="round"' + (op ? ' opacity="' + op + '"' : '') + '/>'; });
+  return s;
+}
+// a laid-out molecule as an <svg>
+function molSVG(smiOrLayout, cls) {
+  var L = typeof smiOrLayout === "string" ? layoutSmi(smiOrLayout) : smiOrLayout, G = 64, pad = 26;
+  var W = L.w * G + pad * 2, H = L.h * G + pad * 2, s = "";
+  function p(a) { return { x: pad + a.x * G, y: pad + a.y * G }; }
+  L.bonds.forEach(function (b) { s += bondG(p(b.a), p(b.b), b.o); });
+  L.atoms.forEach(function (a) { var q = p(a); s += atomG(a.el, q.x, q.y); });
+  return '<svg' + (cls ? ' class="' + cls + '"' : '') + ' viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Displayed formula">' + s + "</svg>";
+}
+
+/* =================== THE PLATE (drag-and-drop builder) =================== */
+var COLS = 8, ROWS = 6, GAP = 60, PAD = 36;
+var GW = PAD * 2 + (COLS - 1) * GAP, GH = PAD * 2 + (ROWS - 1) * GAP, TRAY_Y = GH + 14, TRAY_H = 104; // 492 x 372
+function key(c, r) { return c + "," + r; }
+function cr(k) { var a = k.split(","); return { c: +a[0], r: +a[1] }; }
+function gxy(k) { var p = cr(k); return { x: PAD + p.c * GAP, y: PAD + p.r * GAP }; }
+function bkey(a, b) { return a < b ? a + "|" + b : b + "|" + a; }
+function ends(bk) { return bk.split("|"); }
+var SLOTS = [], SLOT = {};
+(function () {
+  for (var c = 0; c < COLS; c++) for (var r = 0; r < ROWS; r++) [[1, 0], [0, 1]].forEach(function (d) {
+    [1, 2].forEach(function (len) {
+      var c2 = c + d[0] * len, r2 = r + d[1] * len; if (c2 >= COLS || r2 >= ROWS) return;
+      var a = key(c, r), b = key(c2, r2), bk = bkey(a, b), A = gxy(a), B = gxy(b);
+      var s = { bk: bk, a: a, b: b, len: len, mid: { x: (A.x + B.x) / 2, y: (A.y + B.y) / 2 }, midKey: len === 2 ? key(c + d[0], r + d[1]) : null };
+      SLOTS.push(s); SLOT[bk] = s;
+    });
+  });
+})();
+var P = { atoms: {}, bonds: {}, tray: [], els: ["C", "H", "O"], counter: false, flash: [], drag: null, target: null, locked: false };
+function pBondsOf(k) { return Object.keys(P.bonds).filter(function (bk) { var e = ends(bk); return e[0] === k || e[1] === k; }); }
+function pUsed(k) { return pBondsOf(k).reduce(function (s, bk) { return s + P.bonds[bk]; }, 0); }
+function pFull(k) { return pUsed(k) >= EL[P.atoms[k]].v; }
+function mono(k) { return EL[P.atoms[k]].v === 1; }
+function usable(s) { return P.atoms[s.a] && P.atoms[s.b] && (!s.midKey || !P.atoms[s.midKey]); }
+function plateReset(els) { $("p-toast").hidden = true; P.atoms = {}; P.bonds = {}; P.flash = []; P.drag = null; P.target = null; P.counter = false; P.locked = false; if (els) P.els = els; paintPlate(); }
+function paintPlate() {
+  var s = "";
+  s += '<rect x="4" y="4" width="' + (GW - 8) + '" height="' + (GH - 8) + '" rx="22" fill="#fff" stroke="#1F2A2E" stroke-width="3"/>';
+  s += '<text x="' + (GW - 18) + '" y="' + (GH - 14) + '" text-anchor="end" font-family="Press Start 2P, monospace" font-size="9" fill="#9AA7AB">PLATE</text>';
+  for (var c = 0; c < COLS; c++) for (var r = 0; r < ROWS; r++) { var k = key(c, r), p = gxy(k); if (!P.atoms[k]) s += '<circle cx="' + p.x + '" cy="' + p.y + '" r="3.5" fill="#C9D3D5"/>'; }
+  // dashed "tap to bond" hints between neighbouring atoms (not between two 1-bond atoms)
+  SLOTS.forEach(function (sl) {
+    if (sl.len !== 1 || !usable(sl) || P.bonds[sl.bk]) return;
+    if (mono(sl.a) && mono(sl.b)) return;
+    if (P.counter && (pFull(sl.a) || pFull(sl.b))) return;
+    s += '<circle cx="' + sl.mid.x + '" cy="' + sl.mid.y + '" r="7" fill="#fff" stroke="#069494" stroke-width="2.5" stroke-dasharray="4 3"/>';
+  });
+  Object.keys(P.bonds).forEach(function (bk) { var e = ends(bk); s += bondG(gxy(e[0]), gxy(e[1]), P.bonds[bk]); });
+  if (P.drag && P.target) { var tp = gxy(P.target); s += '<circle cx="' + tp.x + '" cy="' + tp.y + '" r="' + (R + 4) + '" fill="#FEF8D9" stroke="#069494" stroke-width="3" stroke-dasharray="6 4"/>'; }
+  Object.keys(P.atoms).forEach(function (k) { var p = gxy(k); s += atomG(P.atoms[k], p.x, p.y, { bad: P.flash.indexOf(k) >= 0, badge: P.counter ? EL[P.atoms[k]].v - pUsed(k) : null }); });
+  // tray
+  s += '<rect x="4" y="' + TRAY_Y + '" width="' + (GW - 8) + '" height="' + TRAY_H + '" rx="22" fill="#FCE883" stroke="#1F2A2E" stroke-width="3"/>';
+  s += '<text x="' + (GW / 2) + '" y="' + (TRAY_Y + 20) + '" text-anchor="middle" font-family="Press Start 2P, monospace" font-size="9" fill="#1F2A2E">HOLD &amp; DRAG ONTO THE PLATE</text>';
+  var n = P.els.length, w = n <= 3 ? 110 : 90, x0 = GW / 2 - (n - 1) * w / 2, cy = TRAY_Y + 58;
+  P.tray = [];
+  P.els.forEach(function (el, i) {
+    var x = x0 + i * w; P.tray.push({ el: el, x: x, y: cy });
+    s += '<ellipse cx="' + x + '" cy="' + (cy + 3) + '" rx="34" ry="28" fill="#fff" stroke="#1F2A2E" stroke-width="3"/>' + atomG(el, x, cy);
+    s += '<text x="' + x + '" y="' + (cy + 40) + '" text-anchor="middle" font-family="Open Sans, sans-serif" font-weight="800" font-size="11.5" fill="#1F2A2E">' + EL[el].v + " bond" + (EL[el].v > 1 ? "s" : "") + '</text>';
+  });
+  if (P.drag) s += atomG(P.drag.el, P.drag.x, P.drag.y, { ghost: true });
+  $("plate").innerHTML = s;
+}
+function svgPt(svg, e) { var m = svg.getScreenCTM(); if (!m) return { x: 0, y: 0 }; var Q = svg.createSVGPoint(); Q.x = e.clientX; Q.y = e.clientY; Q = Q.matrixTransform(m.inverse()); return { x: Q.x, y: Q.y }; }
+function nearestPoint(p) {
+  var c = Math.round((p.x - PAD) / GAP), r = Math.round((p.y - PAD) / GAP);
+  if (c < 0 || r < 0 || c >= COLS || r >= ROWS) return null;
+  var k = key(c, r), q = gxy(k);
+  if (Math.hypot(p.x - q.x, p.y - q.y) > GAP * .55) return null;
+  if (P.atoms[k] && !(P.drag && P.drag.from === k)) return null;
+  return k;
+}
+var ptoastT = null;
+function ptoast(msg) { var t = $("p-toast"); t.textContent = msg; t.hidden = false; clearTimeout(ptoastT); ptoastT = setTimeout(function () { t.hidden = true; }, 2200); }
+(function wirePlate() {
+  var svg = $("plate");
+  svg.addEventListener("pointerdown", function (e) {
+    if (P.locked) return;
+    var p = svgPt(svg, e), hit = null, i;
+    for (i = 0; i < P.tray.length; i++) if (Math.hypot(p.x - P.tray[i].x, p.y - P.tray[i].y) < 36) { hit = { el: P.tray[i].el, from: "tray" }; break; }
+    if (!hit) {
+      var ak = null, da = 26; Object.keys(P.atoms).forEach(function (k) { var q = gxy(k), d = Math.hypot(p.x - q.x, p.y - q.y); if (d < da) { da = d; ak = k; } });
+      // nearest bond slot; where two slots share a spot, prefer an existing bond, then atoms that still need bonds
+      var sk = null, ds = 24, best = 1e9; SLOTS.forEach(function (sl) {
+        if (!usable(sl) && !P.bonds[sl.bk]) return; var d = Math.hypot(p.x - sl.mid.x, p.y - sl.mid.y); if (d >= 24) return;
+        var sc = d + (P.bonds[sl.bk] ? -5 : (mono(sl.a) && mono(sl.b) ? 40 : 0) + (pFull(sl.a) || pFull(sl.b) ? 20 : 0));
+        if (sc < best) { best = sc; ds = d; sk = sl.bk; }
+      });
+      if (sk && (!ak || ds < da)) {
+        var o = ((P.bonds[sk] || 0) + 1) % 3; if (o) P.bonds[sk] = o; else delete P.bonds[sk];
+        P.flash = []; Sound.bond(); paintPlate(); e.preventDefault(); return;
+      }
+      if (ak) {
+        var keep = {}; pBondsOf(ak).forEach(function (bk) { keep[bk] = P.bonds[bk]; delete P.bonds[bk]; });
+        hit = { el: P.atoms[ak], from: ak, keep: keep }; delete P.atoms[ak];
+      }
+    }
+    if (!hit) return;
+    e.preventDefault();
+    hit.x = p.x; hit.y = p.y; hit.x0 = p.x; hit.y0 = p.y; hit.moved = false;
+    P.drag = hit; P.flash = [];
+    try { svg.setPointerCapture(e.pointerId); } catch (err) {}
+    P.target = p.y > GH + 6 ? null : nearestPoint(p); Sound.tap(); paintPlate();
+  });
+  svg.addEventListener("pointermove", function (e) {
+    if (!P.drag) return; var p = svgPt(svg, e);
+    P.drag.x = p.x; P.drag.y = p.y; if (Math.hypot(p.x - P.drag.x0, p.y - P.drag.y0) > 10) P.drag.moved = true;
+    P.target = p.y > GH + 6 ? null : nearestPoint(p); paintPlate();
+  });
+  function end() {
+    if (!P.drag) return; var d = P.drag, t = P.target; P.drag = null; P.target = null;
+    if (t) {
+      P.atoms[t] = d.el; Sound.pop();
+      if (t === d.from) Object.keys(d.keep).forEach(function (bk) { P.bonds[bk] = d.keep[bk]; });
+      Object.keys(P.bonds).forEach(function (bk) { if (SLOT[bk] && SLOT[bk].midKey === t) delete P.bonds[bk]; }); // an atom dropped on a long bond breaks it
+    } else if (d.from === "tray" && !d.moved) ptoast("Hold and drag the atom onto the plate.");
+    else if (d.from !== "tray") ptoast("Atom removed.");
+    paintPlate();
+  }
+  svg.addEventListener("pointerup", end);
+  svg.addEventListener("pointercancel", function () { if (P.drag && P.drag.from !== "tray") { P.atoms[P.drag.from] = P.drag.el; Object.keys(P.drag.keep).forEach(function (bk) { P.bonds[bk] = P.drag.keep[bk]; }); } P.drag = null; P.target = null; paintPlate(); });
+})();
+
+// check the plate. Returns {err, msg, flash} or {g, canon, formula, info}
+function plateCheck() {
+  var keys = Object.keys(P.atoms);
+  if (!keys.length) return { err: "empty", msg: "The plate is empty! Drag some atoms on first." };
+  var nb = {}; keys.forEach(function (k) { nb[k] = []; });
+  Object.keys(P.bonds).forEach(function (bk) { var e = ends(bk); if (P.atoms[e[0]] && P.atoms[e[1]]) { nb[e[0]].push(e[1]); nb[e[1]].push(e[0]); } });
+  var seen = {}, q = [keys[0]]; seen[keys[0]] = 1;
+  while (q.length) { var u = q.shift(); nb[u].forEach(function (v) { if (!seen[v]) { seen[v] = 1; q.push(v); } }); }
+  var loose = keys.filter(function (k) { return !seen[k]; });
+  if (loose.length) return { err: "loose", msg: "Some atoms aren't joined to the rest. Everything on the plate must be one molecule.", flash: loose };
+  var over = keys.filter(function (k) { return pUsed(k) > EL[P.atoms[k]].v; });
+  if (over.length) { var eo = P.atoms[over[0]]; return { err: "valency", msg: "This " + EL[eo].name + " has " + pUsed(over[0]) + " bonds. " + cap(EL[eo].name) + " can only make " + EL[eo].v + ".", flash: over }; }
+  var under = keys.filter(function (k) { return pUsed(k) < EL[P.atoms[k]].v; });
+  if (under.length) { var eu = P.atoms[under[0]], uu = pUsed(under[0]); return { err: "valency", msg: "This " + EL[eu].name + " has only " + uu + " bond" + (uu === 1 ? "" : "s") + ". Every " + EL[eu].name + " needs " + EL[eu].v + ".", flash: under }; }
+  // heavy-atom graph
+  var heavy = keys.filter(function (k) { return P.atoms[k] !== "H"; }), idx = {}; heavy.forEach(function (k, i) { idx[k] = i; });
+  var g = { atoms: heavy.map(function (k) { return P.atoms[k]; }), bonds: [] };
+  Object.keys(P.bonds).forEach(function (bk) { var e = ends(bk); if (idx[e[0]] !== undefined && idx[e[1]] !== undefined) g.bonds.push([idx[e[0]], idx[e[1]], P.bonds[bk]]); });
+  if (!heavy.length) return { err: "offmenu", msg: "That's hydrogen gas, H₂. It isn't on our menu!" };
+  if (g.bonds.length >= heavy.length) return { err: "offmenu", msg: "Rings aren't on our menu. Keep the carbon atoms in an open chain." };
+  var c = countsOf(g);
+  return { g: g, canon: canonOf(g), formula: formulaOf(c), counts: c, info: classify(g), snap: snapPlate() };
+}
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+// a copy of the plate drawing (for seats)
+function snapPlate() {
+  var ks = Object.keys(P.atoms), minc = 99, minr = 99, maxc = 0, maxr = 0;
+  ks.forEach(function (k) { var p = cr(k); minc = Math.min(minc, p.c); minr = Math.min(minr, p.r); maxc = Math.max(maxc, p.c); maxr = Math.max(maxr, p.r); });
+  var at = {}; ks.forEach(function (k) { var p = cr(k); at[k] = { el: P.atoms[k], x: p.c - minc, y: p.r - minr }; });
+  return { atoms: ks.map(function (k) { return at[k]; }), bonds: Object.keys(P.bonds).map(function (bk) { var e = ends(bk); return { a: at[e[0]], b: at[e[1]], o: P.bonds[bk] }; }), w: maxc - minc, h: maxr - minr };
+}
+// why is the built molecule not what was ordered?
+function whyWrong(targetSmi, v) {
+  var t = classify(parseSmi(targetSmi)), b = v.info, nm = NAMES[v.canon], tf = smiFormula(targetSmi);
+  var made = nm ? "You made " + nm + " (" + fx(v.formula) + ")" : "You made " + fx(v.formula);
+  if (b.cls === "other") return { err: "offmenu", msg: made + ", but that isn't on our menu. Check how the O atoms are bonded." };
+  if (t.cls !== b.cls) return { err: "group", msg: made + ", which is " + CLASSNAME[b.cls] + ". This order is " + CLASSNAME[t.cls] + ". " + (GROUPTIP[t.cls] || "") };
+  if (t.cls === "ester" && (t.acid !== b.acid || t.alc !== b.alc)) return { err: "carbons", msg: made + ". Count the carbons on each side of the –COO– link." };
+  if (t.nC !== b.nC) return { err: "carbons", msg: made + ". Count the carbons: this order needs " + t.nC + "." };
+  if (t.straight && !b.straight) return { err: "branched", msg: made + ". That's a branched isomer. This customer wants the carbons in one straight chain." };
+  if (v.formula !== tf) return { err: "product", msg: made + ", but the order is " + fx(tf) + ". Count each type of atom." };
+  return { err: "product", msg: made + ". Close, but not quite this dish. Check where each group is joined." };
+}
+
+/* =================== CUSTOMERS =================== */
+var CUST_OK = {};
+for (var ci = 1; ci <= CUSTOMERS; ci++) (function (n) {
+  var im = new Image();
+  im.onload = function () { CUST_OK[n] = true; CUST_W[n - 1] = Math.round(im.naturalWidth * 300 / im.naturalHeight); };
+  im.src = "customer" + n + ".png";
+})(ci);
+var INK = "#2B1B14";
+function r_(x, y, w, h, c) { return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="' + (c || INK) + '"/>'; }
+function faceSVG(cx, ey, my, mood) {
+  var s = "";
+  if (mood === "delighted") {
+    [-1, 1].forEach(function (sd) { var x = cx + sd * 20 - 7; s += r_(x, ey, 5, 5) + r_(x + 5, ey - 5, 5, 5) + r_(x + 10, ey, 5, 5); });
+    s += r_(cx - 12, my - 5, 24, 13, INK) + r_(cx - 8, my - 1, 16, 6, "#B5403A");
+    s += r_(cx - 40, my - 14, 13, 6, "#FF9DB0") + r_(cx + 27, my - 14, 13, 6, "#FF9DB0");
+  } else if (mood === "happy") {
+    s += r_(cx - 25, ey - 8, 10, 16) + r_(cx + 15, ey - 8, 10, 16);
+    s += r_(cx - 14, my - 4, 4, 4) + r_(cx - 10, my, 20, 4) + r_(cx + 10, my - 4, 4, 4);
+  } else if (mood === "neutral") {
+    s += r_(cx - 25, ey - 8, 10, 16) + r_(cx + 15, ey - 8, 10, 16) + r_(cx - 10, my, 20, 4);
+  } else if (mood === "impatient") {
+    s += r_(cx - 27, ey - 12, 14, 4) + r_(cx + 13, ey - 12, 14, 4);
+    s += r_(cx - 25, ey - 2, 10, 9) + r_(cx + 15, ey - 2, 10, 9) + r_(cx - 8, my + 2, 16, 4);
+    s += r_(cx + 36, ey - 26, 6, 6, "#7CC8F0") + r_(cx + 33, ey - 20, 12, 8, "#7CC8F0");
+  } else { // angry
+    s += r_(cx - 30, ey - 18, 8, 4) + r_(cx - 22, ey - 14, 8, 4) + r_(cx + 22, ey - 18, 8, 4) + r_(cx + 14, ey - 14, 8, 4);
+    s += r_(cx - 25, ey - 6, 10, 12) + r_(cx + 15, ey - 6, 10, 12);
+    s += r_(cx - 14, my + 4, 4, 4) + r_(cx - 10, my, 20, 4) + r_(cx + 10, my + 4, 4, 4);
+    s += r_(cx - 38, ey + 6, 10, 5, "#F07C7C") + r_(cx + 28, ey + 6, 10, 5, "#F07C7C");
+  }
+  return s;
+}
+function custSVG(n, mood) {
+  var w = CUST_W[n - 1] || 240, f = FACE[n - 1], s;
+  if (CUST_OK[n]) s = '<image href="customer' + n + '.png" x="0" y="0" width="' + w + '" height="300"/>';
+  else { // drawn stand-in until the picture loads
+    var cols = ["#FFC0CB", "#FCE883", "#DDF2F2", "#FFE6DA", "#FF8243"], hair = ["#3B2A20", "#1F2A2E", "#6B4A2E"];
+    w = 240; f = [120, 150, 184];
+    s = '<rect x="30" y="230" width="180" height="70" rx="30" fill="' + cols[n % cols.length] + '" stroke="#1F2A2E" stroke-width="6"/>' +
+      '<circle cx="120" cy="150" r="80" fill="#F6C59A" stroke="#1F2A2E" stroke-width="6"/>' +
+      '<path d="M44 140 Q50 62 120 60 Q192 62 196 140 Q170 96 120 98 Q70 96 44 140Z" fill="' + hair[n % 3] + '" stroke="#1F2A2E" stroke-width="6"/>';
+  }
+  return '<svg viewBox="0 0 ' + w + ' 300" aria-hidden="true">' + s + faceSVG(f[0], f[1], f[2], mood) + "</svg>";
+}
+function moodFor(p) { return p > .6 ? "happy" : p > .3 ? "neutral" : p > .12 ? "impatient" : "angry"; }
+// food critic stand-in until critic.png exists
+var CRITIC_OK = false, CRITIC_W = 240; (function () { var im = new Image(); im.onload = function () { CRITIC_OK = true; CRITIC_W = Math.round(im.naturalWidth * 300 / im.naturalHeight); }; im.src = IMG.critic; })();
+function criticSVG(mood) {
+  if (CRITIC_OK) return '<svg viewBox="0 0 ' + CRITIC_W + ' 300" aria-hidden="true"><image href="' + IMG.critic + '" x="0" y="0" width="' + CRITIC_W + '" height="300"/></svg>'; // her own picture already has a face
+  var s = '<svg viewBox="0 0 240 300" aria-hidden="true">' +
+    '<rect x="30" y="226" width="180" height="74" rx="28" fill="#6A3FA0" stroke="#1F2A2E" stroke-width="6"/>' +
+    '<path d="M80 228 L120 268 L160 228" fill="#B48CE0" stroke="#1F2A2E" stroke-width="5"/>' +
+    '<circle cx="120" cy="150" r="80" fill="#F6C59A" stroke="#1F2A2E" stroke-width="6"/>' +
+    '<ellipse cx="114" cy="74" rx="84" ry="26" fill="#C0392B" stroke="#1F2A2E" stroke-width="6"/><rect x="108" y="38" width="12" height="18" fill="#1F2A2E"/>' +
+    '<circle cx="140" cy="150" r="20" fill="none" stroke="#D4A017" stroke-width="6"/><path d="M158 160 L170 210" stroke="#D4A017" stroke-width="3"/>' +
+    '<path d="M86 196 Q120 186 154 196 Q140 206 120 204 Q100 206 86 196Z" fill="#3B2A20"/>';
+  return s + faceSVG(120, 150, 214, mood === "happy" ? "neutral" : mood) + "</svg>";
+}
+
+/* =================== SPRITES (boss) =================== */
+var SP = {};
+Object.keys(IMG).forEach(function (k) { var im = new Image(); SP[k] = { ok: false }; im.onload = function () { SP[k].ok = true; if (k === "hero" || k === "boss") paintBossSprites(); }; im.src = IMG[k]; });
+function art(k, fallback) { return SP[k] && SP[k].ok ? '<img src="' + IMG[k] + '" alt="">' : fallback; }
+var HERO_FALL = '<svg viewBox="0 0 120 150"><rect x="30" y="70" width="60" height="70" rx="12" fill="#fff" stroke="#1F2A2E" stroke-width="5"/><rect x="42" y="80" width="36" height="50" fill="#069494"/><circle cx="60" cy="48" r="26" fill="#F6C59A" stroke="#1F2A2E" stroke-width="5"/><rect x="38" y="8" width="44" height="22" rx="10" fill="#fff" stroke="#1F2A2E" stroke-width="5"/><rect x="44" y="42" width="32" height="10" rx="4" fill="#2EF2E0" stroke="#1F2A2E" stroke-width="3"/></svg>';
+var BOSS_FALL = '<svg viewBox="0 0 120 170"><rect x="30" y="66" width="60" height="96" rx="10" fill="#5C6670" stroke="#1F2A2E" stroke-width="5"/><rect x="56" y="70" width="8" height="40" fill="#069494"/><circle cx="60" cy="44" r="26" fill="#F6C59A" stroke="#1F2A2E" stroke-width="5"/><ellipse cx="60" cy="24" rx="30" ry="14" fill="#E4E8E9" stroke="#1F2A2E" stroke-width="4"/><rect x="48" y="52" width="24" height="5" fill="#3B2A20"/></svg>';
+var BOLT_SVG = '<svg viewBox="0 0 40 40"><line x1="12" y1="20" x2="28" y2="20" stroke="#fff" stroke-width="4"/><circle cx="10" cy="20" r="9" fill="#1F2A2E" stroke="#fff" stroke-width="2.5"/><circle cx="30" cy="20" r="9" fill="#FF8243" stroke="#fff" stroke-width="2.5"/></svg>';
+
+/* =================== SOUND + MUSIC =================== */
+var Sound = {
+  on: load("sound", true), ctx: null,
+  tone: function (f, type, dur, vol, delay, f2) {
+    if (!this.on) return;
+    try {
+      this.ctx = this.ctx || new (window.AudioContext || window.webkitAudioContext)();
+      if (this.ctx.state === "suspended") this.ctx.resume();
+      var c = this.ctx, t = c.currentTime + (delay || 0), o = c.createOscillator(), g = c.createGain();
+      o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+      g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + dur + .02);
+    } catch (e) {}
+  },
+  tap: function () { this.tone(660, "square", .05, .04); },
+  pop: function () { this.tone(520, "triangle", .09, .07, 0, 900); },
+  bond: function () { this.tone(880, "square", .06, .04); },
+  ok: function () { this.tone(660, "square", .09, .06); this.tone(990, "square", .14, .06, .08); },
+  bad: function () { this.tone(220, "sawtooth", .25, .05, 0, 140); },
+  ding: function () { this.tone(1568, "sine", .5, .08); this.tone(2093, "sine", .4, .05, .12); },
+  hit: function () { [880, 660, 990].forEach(function (n, i) { Sound.tone(n, "square", .07, .07, i * .05); }); },
+  hurt: function () { this.tone(140, "sawtooth", .3, .08); this.tone(90, "square", .3, .06, .1); },
+  level: function () { [523, 659, 784, 1047].forEach(function (n, i) { Sound.tone(n, "square", .12, .06, i * .1); }); },
+  win: function () { [523, 659, 784, 1047, 784, 1047].forEach(function (n, i) { Sound.tone(n, "square", .14, .06, i * .12); }); },
+  lose: function () { [392, 330, 262, 196].forEach(function (n, i) { Sound.tone(n, "square", .22, .06, i * .2); }); }
+};
+var Music = {
+  on: load("music", true), cur: null, want: null,
+  el: function (n) { return $("mus-" + n); },
+  play: function (n) {
+    this.want = n;
+    var self = this; ["menu", "diner", "boss"].forEach(function (m) { if (m !== n) { var e = self.el(m); clearInterval(e._f); try { e.pause(); e.currentTime = 0; } catch (x) {} } });
+    if (!this.on || !n) { this.cur = null; return; }
+    var e = this.el(n); clearInterval(e._f);
+    if (this.cur === n && !e.paused) return;
+    this.cur = n;
+    try { e.volume = MUSIC_VOLUME; var p = e.play(); if (p && p.catch) p.catch(function () { self.cur = null; }); } catch (x) {}
+  },
+  stop: function () { this.play(null); },
+  fadeOut: function () { var n = this.cur; if (!n) return; var e = this.el(n), v = e.volume, self = this; clearInterval(e._f); e._f = setInterval(function () { v -= .03; if (v <= 0) { clearInterval(e._f); try { e.pause(); e.currentTime = 0; } catch (x) {} self.cur = null; } else e.volume = v; }, 60); }
+};
+function paintSound() {
+  $("btn-sound").classList.toggle("off", !Sound.on); $("btn-sound").setAttribute("aria-label", Sound.on ? "Sound effects on" : "Sound effects off");
+  $("btn-music").classList.toggle("off", !Music.on); $("btn-music").setAttribute("aria-label", Music.on ? "Music on" : "Music off");
+}
+$("btn-sound").addEventListener("click", function () { Sound.on = !Sound.on; store("sound", Sound.on); paintSound(); });
+$("btn-music").addEventListener("click", function () { Music.on = !Music.on; store("music", Music.on); paintSound(); var w = Music.want; Music.cur = null; Music.play(Music.on ? w : null); Music.want = w; });
+document.addEventListener("visibilitychange", function () {
+  if (document.hidden) { if (Music.cur) { Music.el(Music.cur).pause(); } } else if (Music.cur && Music.on) { try { Music.el(Music.cur).play().catch(function () {}); } catch (e) {} }
+});
+// browsers only allow music after a tap: start the menu music on the first one
+document.addEventListener("pointerdown", function first() { document.removeEventListener("pointerdown", first, true); if (!Music.cur && Music.want) { var w = Music.want; Music.play(w); } }, true);
+paintSound();
+
+/* =================== CONTENT =================== */
+var STAGES = {
+  s1: { name: "Build Counter", desc: "Build the displayed formula each customer orders.", tiers: ["cs", "pure"] },
+  s2: { name: "Big Table", desc: "Serve each table different isomers of the same formula.", tiers: ["pure"] },
+  s3: { name: "Kitchen Stations", desc: "Pick the right reagents and conditions, then plate the product.", tiers: ["cs", "pure"] },
+  s4: { name: "Food Critic", desc: "Predict the critic's chemical tests on your dishes.", tiers: ["cs", "pure"] },
+  boss: { name: "Health Inspector", desc: "Boss fight! Answer before you get written up.", tiers: ["cs", "pure"] }
+};
+var TIERNAME = { cs: "Combined Science", pure: "Pure Chemistry" };
+var GROUPNAME = { alkane: "Alkanes", alkene: "Alkenes", alcohol: "Alcohols", acid: "Carboxylic acids", ester: "Esters" };
+
+// Stage 1 orders: [tier, group, mode, ticket, accepted SMILES (first = main), note]
+var S1 = [
+  ["cs", "alkane", "By name", "Methane", ["C"]], ["cs", "alkane", "By name", "Ethane", ["CC"]], ["cs", "alkane", "By name", "Propane", ["CCC"]],
+  ["cs", "alkane", "By formula", "C2H6", ["CC"]], ["cs", "alkane", "By description", "The alkane with 3 carbon atoms", ["CCC"]],
+  ["cs", "alkene", "By name", "Ethene", ["C=C"]], ["cs", "alkene", "By name", "Propene", ["C=CC"]], ["cs", "alkene", "By formula", "C2H4", ["C=C"]],
+  ["cs", "alkene", "By description", "The first member of the alkenes", ["C=C"]],
+  ["cs", "alcohol", "By name", "Methanol", ["CO"]], ["cs", "alcohol", "By name", "Ethanol", ["CCO"]],
+  ["cs", "alcohol", "By name", "Propanol", ["CCCO", "CC(O)C"], "The –OH can go on any carbon."],
+  ["cs", "alcohol", "By formula", "CH3OH", ["CO"]], ["cs", "alcohol", "By formula", "C2H5OH", ["CCO"]],
+  ["cs", "alcohol", "By description", "The alcohol with 3 carbon atoms", ["CCCO", "CC(O)C"], "The –OH can go on any carbon."],
+  ["cs", "acid", "By name", "Ethanoic acid", ["CC(=O)O"]], ["cs", "acid", "By formula", "CH3COOH", ["CC(=O)O"]],
+  ["pure", "alkane", "By name", "Butane", ["CCCC"]], ["pure", "alkane", "By formula", "C4H10", ["CCCC", "CC(C)C"], "Any isomer is fine."],
+  ["pure", "alkane", "By description", "A branched alkane with 4 carbon atoms", ["CC(C)C"]],
+  ["pure", "alkene", "By name", "Butene", ["C=CCC", "CC=CC"], "The C=C can go anywhere in the chain."],
+  ["pure", "alkene", "By description", "A branched alkene with 4 carbon atoms", ["C=C(C)C"]],
+  ["pure", "alcohol", "By name", "Butanol", ["CCCCO", "CCC(O)C"], "The –OH can go on any carbon."],
+  ["pure", "alcohol", "By formula", "C3H7OH", ["CCCO", "CC(O)C"], "Any isomer is fine."],
+  ["pure", "alcohol", "By description", "A branched alcohol with 4 carbon atoms", ["CC(C)CO", "CC(C)(C)O"], "Any branched one is fine."],
+  ["pure", "acid", "By name", "Methanoic acid", ["C(=O)O"]], ["pure", "acid", "By name", "Propanoic acid", ["CCC(=O)O"]],
+  ["pure", "acid", "By name", "Butanoic acid", ["CCCC(=O)O"]], ["pure", "acid", "By formula", "HCOOH", ["C(=O)O"]],
+  ["pure", "acid", "By formula", "C2H5COOH", ["CCC(=O)O"]],
+  ["pure", "ester", "By name", "Methyl ethanoate", ["CC(=O)OC"]], ["pure", "ester", "By name", "Ethyl ethanoate", ["CC(=O)OCC"]],
+  ["pure", "ester", "By name", "Ethyl methanoate", ["CCOC=O"]], ["pure", "ester", "By name", "Methyl propanoate", ["CCC(=O)OC"]],
+  ["pure", "ester", "By description", "The ester made from ethanol and propanoic acid", ["CCC(=O)OCC"]],
+  ["pure", "ester", "By formula", "CH3COOCH3", ["CC(=O)OC"]]
+];
+var SAY = {
+  "By name": ["One {d}, please!", "I'll have the {d}.", "{D} for me, thanks!", "Can I get the {d}?"],
+  "By formula": ["Can I get this one?", "Just what's on the ticket, please.", "This formula, please!"],
+  "By description": ["I've written down what I'd like.", "Read my ticket, chef!", "Here's what I'm craving."]
+};
+// Stage 2 tables
+var S2 = [
+  { f: "C4H10", cls: "alkane", need: 2, set: ["CCCC", "CC(C)C"], say: "Table for two! We each want a different C₄H₁₀ alkane." },
+  { f: "C3H8O", cls: "alcohol", need: 2, set: ["CCCO", "CC(O)C"], say: "Two of us. A different C₃H₇OH alcohol each, please!" },
+  { f: "C4H8", cls: "alkene", need: 3, set: ["C=CCC", "CC=CC", "C=C(C)C"], say: "Table for three! Three different C₄H₈ alkenes." },
+  { f: "C4H10O", cls: "alcohol", need: 3, set: ["CCCCO", "CCC(O)C", "CC(C)CO", "CC(C)(C)O"], say: "Three of us: three different C₄H₉OH alcohols." },
+  { f: "C3H6O2", cls: "ester", need: 2, set: ["CC(=O)OC", "CCOC=O"], say: "Two fruity esters with formula C₃H₆O₂, both different!" }
+];
+// Stage 3 kitchen stations
+var STATIONS = {
+  crack: { name: "Cracking oven", cond: "High temperature + catalyst (aluminium oxide)", does: "Cracking breaks long alkanes into shorter alkanes and alkenes." },
+  hydro: { name: "Hydrogenation grill", cond: "Hydrogen gas + nickel catalyst, heat", does: "Hydrogen adds across a C=C double bond, turning an alkene into an alkane." },
+  brom: { name: "Bromine bar", cond: "Aqueous bromine, room temperature", does: "Bromine adds across a C=C double bond." },
+  chlor: { name: "UV lamp", cond: "Chlorine gas + ultraviolet light", does: "In UV light, a chlorine atom replaces a hydrogen atom on an alkane (substitution)." },
+  ferm: { name: "Fermentation tank", cond: "Yeast, warm (about 37 °C), no oxygen", does: "Yeast ferments glucose into ethanol and carbon dioxide." },
+  oxid: { name: "Oxidation pot", cond: "Acidified potassium manganate(VII), heat", does: "Acidified KMnO₄ oxidises an alcohol to a carboxylic acid." },
+  steam: { name: "Steam vent", cond: "Steam + phosphoric(V) acid catalyst, high temperature and pressure", does: "Steam adds across a C=C double bond, turning an alkene into an alcohol.", pure: true },
+  ester: { name: "Ester mixer", cond: "Concentrated sulfuric acid, heat", does: "Concentrated sulfuric acid helps an alcohol and a carboxylic acid join into an ester and water.", pure: true },
+  burn: { name: "Burner", cond: "Burn in excess oxygen", does: "Burning only makes carbon dioxide and water." }
+};
+// station pictures (station-crack.png etc.); stations without a picture use the drawn icon
+var ST_IMG = {}; ["crack", "steam", "hydro", "brom", "ferm", "oxid", "ester", "chlor", "burn"].forEach(function (k) { var im = new Image(); im.onload = function () { ST_IMG[k] = true; }; im.src = "station-" + k + ".png"; });
+var ICON = {
+  crack: '<rect x="6" y="10" width="36" height="32" rx="4" fill="#5C6670" stroke="#1F2A2E" stroke-width="3"/><rect x="11" y="16" width="26" height="14" rx="2" fill="#1F2A2E"/><path d="M15 30 l4-10 3 6 3-9 4 13z" fill="#FF8243"/><circle cx="14" cy="37" r="2.5" fill="#FCE883"/><circle cx="22" cy="37" r="2.5" fill="#FCE883"/>',
+  hydro: '<rect x="6" y="26" width="36" height="12" rx="3" fill="#5C6670" stroke="#1F2A2E" stroke-width="3"/><path d="M10 22h28M10 17h28" stroke="#1F2A2E" stroke-width="3"/><circle cx="34" cy="10" r="6" fill="#C9D3D5" stroke="#1F2A2E" stroke-width="2.5"/><text x="34" y="13" font-size="7" font-weight="800" text-anchor="middle" font-family="Open Sans" fill="#1F2A2E">Ni</text>',
+  brom: '<path d="M18 4h12v28a6 6 0 0 1-12 0z" fill="#fff" stroke="#1F2A2E" stroke-width="3"/><path d="M19.5 18h9v14a4.5 4.5 0 0 1-9 0z" fill="#B5502A"/><path d="M15 4h18" stroke="#1F2A2E" stroke-width="3"/>',
+  chlor: '<circle cx="24" cy="20" r="11" fill="#B48CE0" stroke="#1F2A2E" stroke-width="3"/><rect x="18" y="30" width="12" height="8" fill="#5C6670" stroke="#1F2A2E" stroke-width="2.5"/><path d="M6 20h4M38 20h4M24 2v4M11 7l3 3M37 7l-3 3" stroke="#6A3FA0" stroke-width="3" stroke-linecap="round"/>',
+  ferm: '<rect x="10" y="8" width="28" height="34" rx="6" fill="#FCE883" stroke="#1F2A2E" stroke-width="3"/><circle cx="19" cy="30" r="3" fill="#fff" stroke="#1F2A2E" stroke-width="2"/><circle cx="28" cy="22" r="4" fill="#fff" stroke="#1F2A2E" stroke-width="2"/><circle cx="22" cy="16" r="2" fill="#fff" stroke="#1F2A2E" stroke-width="2"/>',
+  oxid: '<path d="M19 4h10v12l10 22H9l10-22z" fill="#fff" stroke="#1F2A2E" stroke-width="3" stroke-linejoin="round"/><path d="M14 30l-3.5 7h27L34 30z" fill="#8E3BB8"/>',
+  steam: '<rect x="8" y="26" width="32" height="14" rx="4" fill="#5C6670" stroke="#1F2A2E" stroke-width="3"/><path d="M16 22c-4-4 4-6 0-11M24 22c-4-4 4-6 0-11M32 22c-4-4 4-6 0-11" fill="none" stroke="#7CC8F0" stroke-width="3" stroke-linecap="round"/>',
+  ester: '<path d="M20 4h8v8l6 6v24H14V18l6-6z" fill="#FFC0CB" stroke="#1F2A2E" stroke-width="3" stroke-linejoin="round"/><circle cx="24" cy="29" r="5" fill="#FF8243" stroke="#1F2A2E" stroke-width="2"/><path d="M24 24v-3" stroke="#1E9E62" stroke-width="3"/>',
+  burn: '<path d="M24 4c6 10 14 14 14 24a14 14 0 0 1-28 0c0-6 4-10 6-14 2 6 4 7 6 7-2-6 0-12 2-17z" fill="#FF8243" stroke="#1F2A2E" stroke-width="3" stroke-linejoin="round"/><path d="M24 26c3 4 6 6 6 10a6 6 0 0 1-12 0c0-3 3-6 6-10z" fill="#FCE883"/>'
+};
+// from: list of [SMILES] or [null, name, formula]
+var S3 = [
+  { t: "cs", from: [["C=C"]], make: ["CC"], path: ["hydro"], type: "Hydrogenation", say: "Ethane, please. All we have is ethene!" },
+  { t: "cs", from: [["C=CC"]], make: ["CCC"], path: ["hydro"], type: "Hydrogenation", say: "Propane, please. Use the propene!" },
+  { t: "cs", from: [["C=C"]], make: ["BrCCBr"], path: ["brom"], type: "Bromine addition", extra: ["Br"], say: "Ethene with bromine added, please!" },
+  { t: "cs", from: [["C=CC"]], make: ["BrCC(Br)C"], path: ["brom"], type: "Bromine addition", extra: ["Br"], say: "Propene with bromine added, please!" },
+  { t: "cs", from: [["C"]], make: ["CCl"], path: ["chlor"], type: "Substitution", extra: ["Cl"], say: "Methane with one H swapped for chlorine." },
+  { t: "cs", from: [[null, "Glucose", "C6H12O6"]], make: ["CCO"], path: ["ferm"], type: "Fermentation", say: "Ethanol, please. Start from the glucose." },
+  { t: "cs", from: [["CCO"]], make: ["CC(=O)O"], path: ["oxid"], type: "Oxidation", say: "I want something sour: ethanoic acid!" },
+  { t: "cs", from: [[null, "Decane", "C10H22"]], make: ["C=C"], path: ["crack"], type: "Cracking", say: "Ethene, please. All we have is long decane." },
+  { t: "pure", from: [["C=C"]], make: ["CCO"], path: ["steam"], type: "Hydration", say: "Ethanol, please. No yeast today, only ethene!" },
+  { t: "pure", from: [["C=CC"]], make: ["CCCO", "CC(O)C"], name: "Propanol", path: ["steam"], type: "Hydration", note: "Either isomer is fine.", say: "Propanol from the propene, please!" },
+  { t: "pure", from: [["CCO"], ["CC(=O)O"]], make: ["CC(=O)OCC"], path: ["ester"], type: "Esterification", say: "Make me something fruity from these two!" },
+  { t: "pure", from: [["CO"], ["CCC(=O)O"]], make: ["CCC(=O)OC"], path: ["ester"], type: "Esterification", say: "An ester from methanol and propanoic acid, please." },
+  { t: "pure", from: [["CCCO"]], make: ["CCC(=O)O"], path: ["oxid"], type: "Oxidation", say: "Propanoic acid, please. We've got propan-1-ol." },
+  { t: "pure", from: [["C=C"]], make: ["CC(=O)O"], path: ["steam", "oxid"], via: ["CCO"], type: "Two-step", say: "Ethanoic acid, but we only have ethene. Two steps!" },
+  { t: "pure", from: [[null, "Decane", "C10H22"]], make: ["CCO"], path: ["crack", "steam"], via: ["C=C"], type: "Two-step", say: "Ethanol, but all we have is decane. Two steps!" }
+];
+// Stage 4: food critic tests
+function pools() {
+  var p = { alkane: ["C", "CC", "CCC"], alkene: ["C=C", "C=CC"], alcohol: ["CO", "CCO", "CCCO"], acid: ["CC(=O)O"], ester: [] };
+  if (G.tier === "pure") {
+    p.alkane = p.alkane.concat(["CCCC", "CC(C)C"]); p.alkene = p.alkene.concat(["C=CCC", "CC=CC"]);
+    p.alcohol = p.alcohol.concat(["CC(O)C", "CCCCO"]); p.acid = p.acid.concat(["C(=O)O", "CCC(=O)O"]); p.ester = ["CC(=O)OC", "CC(=O)OCC", "CCOC=O"];
+  }
+  return p;
+}
+function allMols() { var p = pools(), a = []; Object.keys(p).forEach(function (k) { a = a.concat(p[k]); }); return a; }
+var GF = { alkane: "C<span class=sub>n</span>H<span class=sub>2n+2</span>", alkene: "C<span class=sub>n</span>H<span class=sub>2n</span>", alcohol: "C<span class=sub>n</span>H<span class=sub>2n+1</span>OH" };
+function plates(right, wrongs, q, type, why) { var all = shuffle([right].concat(wrongs)); return { kind: "plates", q: q, type: type, plates: all, ans: all.indexOf(right), why: why }; }
+function topts(q, right, wrongs, type, why, show) { var all = shuffle([right].concat(wrongs)); return { kind: "text", q: q, type: type, show: show, opts: all, ans: all.indexOf(right), why: why }; }
+var CRITIC = {
+  bromPick: function (p) { return plates(pick(p.alkene), [pick(p.alkane), pick(p.alcohol)], "My aqueous bromine test! Which dish turns it from reddish-brown to colourless?", "Bromine test", "Only the alkene has a C=C double bond. Bromine adds across it, so the colour disappears."); },
+  bromObs: function (p) { var al = Math.random() < .5, smi = al ? pick(p.alkene) : pick(p.alkane.concat(p.alcohol)); return topts("I shake this dish with aqueous bromine. What will I see?", al ? "Reddish-brown → colourless" : "Stays reddish-brown", [al ? "Stays reddish-brown" : "Reddish-brown → colourless", "Turns milky white", "Fizzes"], "Bromine test", al ? "It has a C=C double bond, so bromine adds across it and is decolourised." : "No C=C double bond, so nothing adds on and the bromine stays reddish-brown.", smi); },
+  unsat: function (p) { return plates(pick(p.alkene), [pick(p.alkane), pick(p.alcohol.concat(p.acid))], "Which dish is unsaturated?", "Saturated or unsaturated", "Unsaturated means it has a carbon–carbon double bond (C=C)."); },
+  kmno4: function (p) { return plates(pick(p.alcohol.filter(function (s) { return s !== "CC(O)C"; })), [pick(p.alkane), pick(p.acid)], "I warm each dish with acidified potassium manganate(VII). Which one turns it from purple to colourless?", "Oxidation test", "The alcohol is oxidised to a carboxylic acid, using up the purple KMnO₄."); },
+  series: function (p) {
+    var cls = shuffle(["alkane", "alkene", "alcohol"]), a = cls[0], two = shuffle(p[a]).slice(0, 2);
+    var it = plates(two[1], [pick(p[cls[1]]), pick(p[cls[2]])], "Which dish is in the same homologous series as this one?", "Homologous series", "Both are " + GROUPNAME[a].toLowerCase() + ": same functional group and same general formula.");
+    it.show = two[0]; return it;
+  },
+  general: function (p) { var cls = shuffle(["alkane", "alkene", "alcohol"]), a = cls[0]; return plates(pick(p[a]), [pick(p[cls[1]]), pick(p[cls[2]])], "Which dish fits the general formula " + GF[a] + "?", "General formulae", GROUPNAME[a] + " have the general formula " + GF[a] + "."); },
+  name: function (p) {
+    var all = allMols(), smi = pick(all), nm = nameOfSmi(smi), cl = classify(parseSmi(smi));
+    var others = shuffle(all.filter(function (s) { return nameOfSmi(s) !== nm; })).sort(function (a, b) { var ca = classify(parseSmi(a)), cb = classify(parseSmi(b)); return ((cb.cls === cl.cls) + (cb.nC === cl.nC)) - ((ca.cls === cl.cls) + (ca.nC === cl.nC)); });
+    var wr = []; others.forEach(function (s) { var n = nameOfSmi(s); if (wr.length < 3 && wr.indexOf(n) < 0) wr.push(n); });
+    return topts("What's the name of this dish?", nm, wr, "Naming", "Count the carbons (meth 1, eth 2, prop 3, but 4) and spot the group (-ane, -ene, -ol, -oic acid).", smi);
+  },
+  poly: function () { return topts("This sunflower oil decolourises lots of aqueous bromine. The label says “polyunsaturated”. What does that mean?", "It has many C=C double bonds", ["It has no C=C double bonds", "It has many –OH groups", "It has been hydrogenated"], "Saturated or unsaturated", "Poly = many. Polyunsaturated fats have many C=C double bonds, which is why they decolourise lots of bromine."); },
+  marg: function () { return topts("How does the kitchen turn liquid vegetable oil into solid margarine?", "Add hydrogen, with a nickel catalyst", ["Add aqueous bromine", "Ferment it with yeast", "Crack it at high temperature"], "Reactions", "Hydrogen adds across some C=C bonds. The fat becomes more saturated and solid."); },
+  carbonate: function (p) { return plates(pick(p.acid), [pick(p.alcohol), pick(p.ester)], "Which dish fizzes when I add sodium carbonate?", "Acid tests", "Carboxylic acids react with carbonates to give a salt, water and carbon dioxide gas."); },
+  fruity: function (p) { return plates(pick(p.ester), [pick(p.acid), pick(p.alcohol)], "Which dish has a sweet, fruity smell?", "Esters", "Esters smell fruity. They're used in food flavourings and perfumes."); },
+  isomer: function () {
+    var grp = pick([["CCCC", "CC(C)C"], ["C=CCC", "CC=CC", "C=C(C)C"], ["CCCO", "CC(O)C"], ["CC(=O)OC", "CCOC=O", "CCC(=O)O"]]), two = shuffle(grp).slice(0, 2);
+    var other = { CCCC: ["CCC", "C=CCC"], "C=CCC": ["CCCC", "C=CC"], CCCO: ["CCO", "CCC(=O)O"], "CC(=O)OC": ["CC(=O)OCC", "CCCO"] }[grp[0]];
+    var it = plates(two[1], other, "Which dish is an isomer of this one?", "Isomers", "Isomers have the same molecular formula (" + fx(smiFormula(two[0])) + ") but a different structure.");
+    it.show = two[0]; return it;
+  },
+  esterFrom: function (p) {
+    var T = {
+      "CC(=O)OC": ["Ethanoic acid + methanol", ["Methanoic acid + ethanol", "Ethanoic acid + ethanol", "Methanoic acid + methanol"]],
+      "CC(=O)OCC": ["Ethanoic acid + ethanol", ["Ethanoic acid + methanol", "Methanoic acid + propanol", "Propanoic acid + methanol"]],
+      "CCOC=O": ["Methanoic acid + ethanol", ["Ethanoic acid + methanol", "Ethanoic acid + ethanol", "Methanoic acid + methanol"]]
+    }, smi = pick(p.ester);
+    return topts("Which acid and alcohol were used to make this ester?", T[smi][0], T[smi][1], "Esters", "The \u201C-yl\u201D part comes from the alcohol and the \u201C-oate\u201D part from the acid. This is " + nameOfSmi(smi) + ".", smi);
+  },
+  metal: function () { return topts("I drop magnesium ribbon into ethanoic acid. What do I see?", "Bubbles of a gas that pops with a lighted splint", ["No change at all", "The solution turns orange", "A white precipitate forms"], "Acid tests", "Ethanoic acid is a (weak) acid, so it reacts with magnesium to give magnesium ethanoate and hydrogen gas."); }
+};
+var CRITIC_CS = ["bromPick", "bromObs", "unsat", "kmno4", "series", "general", "name", "poly", "marg"];
+var CRITIC_PURE = ["carbonate", "fruity", "isomer", "esterFrom", "metal"];
+// Boss questions: [topic, question, right answer, [wrong answers], why]
+var BOSSQ_CS = [
+  ["Fuels", "Crude oil is separated into fractions by…", "Fractional distillation", ["Cracking", "Filtration", "Fermentation"], "Fractions boil at different temperature ranges, so they separate up the fractionating column."],
+  ["Fuels", "Which fraction has the smallest molecules and the lowest boiling point?", "Petroleum gas", ["Bitumen", "Diesel", "Lubricating oil"], "Small molecules have weak forces between them, so they boil off at the top of the column."],
+  ["Fuels", "Natural gas is mainly…", "Methane", ["Ethane", "Hydrogen", "Ethene"], "Natural gas is mainly methane, CH₄."],
+  ["Fuels", "Why are crude oil and natural gas non-renewable?", "They take millions of years to form", ["They can't be burned", "They are made from plants grown each year", "They are separated by distillation"], "We use them far faster than they form, so they will run out."],
+  ["Fuels", "Why is bioethanol from sugarcane called renewable?", "Sugarcane can be grown again quickly", ["It produces no CO₂ when burned", "It is made from crude oil", "It is recycled after burning"], "A new crop can be grown every year."],
+  ["Fuels", "Burning bioethanol releases CO₂. Why can it still be more sustainable than petrol?", "The CO₂ is offset by CO₂ the sugarcane took in while growing", ["Bioethanol releases no CO₂", "Bioethanol is made from methane", "Petrol absorbs CO₂ when burned"], "Photosynthesis by the growing crop takes in CO₂, offsetting what burning releases."],
+  ["Fuels", "Crude oil fractions have competing uses as…", "Fuels and a source of chemicals", ["Only fuels", "Only plastics", "Fertilisers and fuels"], "The same fraction can be burned as fuel or turned into chemicals and plastics."],
+  ["Alkanes & alkenes", "Why is cracking needed at a refinery?", "There's more demand for small molecules than crude oil supplies", ["To make molecules bigger", "To remove sulfur from fuels", "To separate crude oil into fractions"], "Cracking turns surplus long-chain fractions into in-demand smaller molecules."],
+  ["Alkanes & alkenes", "Cracking a long alkane needs…", "High temperature and a catalyst", ["Yeast and warmth", "Ultraviolet light", "Aqueous bromine"], "Cracking breaks C–C bonds using heat and a catalyst such as aluminium oxide."],
+  ["Alkanes & alkenes", "Cracking makes shorter alkanes and…", "Alkenes (and hydrogen)", ["Alcohols", "Carboxylic acids", "Carbon dioxide and water"], "Cracking is how we make alkenes such as ethene, plus hydrogen."],
+  ["Alkanes & alkenes", "Alkanes are generally unreactive, except for…", "Combustion and substitution with chlorine", ["Addition of bromine", "Polymerisation", "Oxidation to acids"], "Alkanes are saturated, so they can't do addition reactions."],
+  ["Alkanes & alkenes", "Methane reacts with chlorine only when there is…", "Ultraviolet light", ["A nickel catalyst", "Yeast", "Concentrated sulfuric acid"], "UV light starts the substitution reaction."],
+  ["Alkanes & alkenes", "The general formula of the alkenes is…", "CₙH₂ₙ", ["CₙH₂ₙ₊₂", "CₙH₂ₙ₊₁OH", "CₙH₂ₙ₋₂"], "Each alkene has one C=C, so it has two fewer H atoms than the alkane."],
+  ["Alkanes & alkenes", "Which result shows a hydrocarbon is unsaturated?", "Aqueous bromine turns from reddish-brown to colourless", ["Limewater turns milky", "Bromine water stays reddish-brown", "Damp red litmus turns blue"], "Bromine adds across the C=C bond and is decolourised."],
+  ["Alkanes & alkenes", "Margarine is made by reacting vegetable oil with…", "Hydrogen, using a nickel catalyst", ["Bromine at room temperature", "Steam and phosphoric acid", "Oxygen and yeast"], "Hydrogen adds across C=C bonds, making the fat more saturated and solid."],
+  ["Alkanes & alkenes", "“Polyunsaturated” on a food label means the fat has…", "Many C=C double bonds", ["No C=C double bonds", "Many –OH groups", "Only C–C single bonds"], "Poly = many; unsaturated = has C=C bonds."],
+  ["Alkanes & alkenes", "Ethene reacts with hydrogen to make…", "Ethane", ["Ethanol", "Ethanoic acid", "Methane"], "H₂ adds across the C=C bond: C₂H₄ + H₂ → C₂H₆."],
+  ["Alkanes & alkenes", "Which of these is NOT an alkane?", "C₃H₆", ["CH₄", "C₂H₆", "C₄H₁₀"], "C₃H₆ fits CₙH₂ₙ, so it's an alkene (propene)."],
+  ["Homologous series", "Members of a homologous series have…", "The same general formula and similar chemical properties", ["The same boiling point", "The same molecular formula", "The same number of carbon atoms"], "Same functional group → similar reactions; physical properties change gradually."],
+  ["Homologous series", "Going down the alkanes, boiling point…", "Increases, as the molecules get bigger", ["Decreases", "Stays the same", "Increases, because more C=C bonds form"], "Bigger molecules have stronger forces between them."],
+  ["Homologous series", "Each member of a homologous series differs from the next by…", "CH₂", ["CH₄", "C₂H₄", "H₂"], "One extra CH₂ unit each time."],
+  ["Homologous series", "Going down the alkanes, the liquids become…", "More viscous (thicker)", ["Less viscous", "More reactive", "Unsaturated"], "Longer chains tangle more, so they flow less easily."],
+  ["Alcohols & acids", "Fermentation of glucose needs…", "Yeast, warmth (about 37 °C) and no oxygen", ["Nickel catalyst and heat", "Ultraviolet light", "Steam at high pressure"], "Yeast enzymes work best when warm, and no air stops the ethanol being oxidised."],
+  ["Alcohols & acids", "Fermentation of glucose makes ethanol and…", "Carbon dioxide", ["Oxygen", "Hydrogen", "Methane"], "C₆H₁₂O₆ → 2C₂H₅OH + 2CO₂"],
+  ["Alcohols & acids", "Ethanol is oxidised to ethanoic acid by…", "Acidified potassium manganate(VII)", ["Aqueous bromine", "Limewater", "Yeast"], "The oxidising agent turns the alcohol into a carboxylic acid."],
+  ["Alcohols & acids", "Wine left open turns sour because…", "Oxygen in the air oxidises ethanol to ethanoic acid", ["The ethanol ferments again", "The wine is cracked", "The ethanol polymerises"], "Ethanoic acid is the acid in vinegar."],
+  ["Alcohols & acids", "The functional group of all alcohols is…", "–OH", ["C=C", "–COOH", "–COO–"], "Alcohols contain the hydroxyl group, –OH."],
+  ["Alcohols & acids", "The functional group of carboxylic acids is…", "–COOH", ["–OH", "C=C", "–COO–"], "Carboxylic acids contain –COOH (also written –CO₂H)."],
+  ["Alcohols & acids", "When ethanol burns completely, it makes…", "Carbon dioxide and water", ["Ethanoic acid only", "Carbon monoxide and hydrogen", "Ethene and water"], "C₂H₅OH + 3O₂ → 2CO₂ + 3H₂O"],
+  ["Alcohols & acids", "What is CH₃CH₂CH₂OH called?", "Propanol", ["Propane", "Propanoic acid", "Propene"], "3 carbons (prop-) with an –OH group (-ol)."]
+];
+var BOSSQ_PURE = [
+  ["Esters", "Ethanol + ethanoic acid →", "Ethyl ethanoate + water", ["Ethyl ethanoate + hydrogen", "Ethanoyl ethanol + water", "Ethane + carbon dioxide"], "Alcohol + carboxylic acid → ester + water."],
+  ["Esters", "Making an ester needs…", "Concentrated sulfuric acid and heat", ["Dilute hydrochloric acid at room temperature", "A nickel catalyst", "Yeast at 37 °C"], "Concentrated H₂SO₄ is the catalyst for esterification."],
+  ["Esters", "Methanol + propanoic acid makes…", "Methyl propanoate", ["Propyl methanoate", "Methyl propanol", "Propanoyl methanol"], "-yl from the alcohol, -oate from the acid."],
+  ["Esters", "CH₃COOCH₂CH₂CH₃ is made from…", "Ethanoic acid and propanol", ["Propanoic acid and ethanol", "Ethanol and propanol", "Methanoic acid and butanol"], "CH₃COO– is ethanoate; –CH₂CH₂CH₃ is propyl. Propyl ethanoate."],
+  ["Esters", "Esters are used in…", "Food flavourings and perfumes", ["Fertilisers", "Fuels for cars", "Bleaches"], "Esters have sweet, fruity smells."],
+  ["Isomers", "Isomers have…", "The same molecular formula but different structures", ["The same structure but different formulae", "The same boiling point", "Different numbers of atoms"], "Same atoms, arranged differently."],
+  ["Isomers", "How many structural isomers does C₄H₁₀ have?", "2", ["1", "3", "4"], "Butane and methylpropane."],
+  ["Isomers", "Which pair are isomers?", "Butane and methylpropane", ["Ethane and ethene", "Propanol and propanoic acid", "Methane and ethane"], "Both are C₄H₁₀."],
+  ["Isomers", "Which is an isomer of but-1-ene?", "Methylpropene", ["Butane", "Propene", "Butan-1-ol"], "Both are C₄H₈."],
+  ["Isomers", "Propan-1-ol and propan-2-ol are…", "Isomers", ["The same compound", "Members of different homologous series", "An acid and an alcohol"], "Both C₃H₇OH, with the –OH on a different carbon."],
+  ["Alcohols & acids", "Ethanol is made from ethene using…", "Steam, phosphoric(V) acid catalyst, high temperature and pressure", ["Yeast, 37 °C, no oxygen", "Hydrogen and nickel", "Ultraviolet light"], "Catalysed addition of steam to ethene."],
+  ["Alcohols & acids", "Ethanoic acid is a weak acid because it…", "Only partially ionises in water", ["Has no hydrogen", "Fully ionises in water", "Is an alcohol"], "Only a few molecules release H⁺ ions."],
+  ["Alcohols & acids", "Ethanoic acid + sodium carbonate gives…", "Sodium ethanoate, water and carbon dioxide", ["Sodium ethanoate and hydrogen", "Ethyl ethanoate and water", "No reaction"], "Acid + carbonate → salt + water + CO₂."],
+  ["Alcohols & acids", "Ethanoic acid + magnesium gives…", "Magnesium ethanoate and hydrogen", ["Magnesium ethanoate and water", "Magnesium oxide and ethene", "No reaction"], "Acid + metal → salt + hydrogen."],
+  ["Alkanes & alkenes", "Propene reacts with steam. The product is…", "Propanol", ["Propane", "Propanoic acid", "Poly(propene)"], "H₂O adds across the C=C, giving an alcohol."]
+];
+var BOSS_TOPICS = ["Fuels", "Homologous series", "Alkanes & alkenes", "Alcohols & acids", "Esters", "Isomers"];
+var ERR = {
+  valency: { label: "Wrong number of bonds", tip: "Carbon makes 4 bonds, oxygen 2, and hydrogen, bromine and chlorine 1." },
+  loose: { label: "Atoms not joined up", tip: "Every atom on the plate must be bonded into one molecule." },
+  empty: { label: "Empty plate", tip: "Drag atoms on before you serve." },
+  group: { label: "Wrong functional group", tip: "C=C is an alkene, –OH an alcohol, –COOH a carboxylic acid, –COO– an ester." },
+  carbons: { label: "Wrong number of carbons", tip: "meth = 1, eth = 2, prop = 3, but = 4." },
+  branched: { label: "Branched instead of straight", tip: "Names like butane mean one straight chain of carbons." },
+  offmenu: { label: "Not on the menu", tip: "Rings and other groups aren't in the syllabus. Check each O atom." },
+  formula: { label: "Wrong molecular formula", tip: "Count every C, H and O against the order." },
+  duplicate: { label: "Same isomer twice", tip: "Flipping or bending a chain doesn't make a new isomer." },
+  product: { label: "Wrong product", tip: "In addition reactions, each carbon of the C=C gets one new atom." },
+  station: { label: "Wrong reagents or conditions", tip: "Match each reaction to its reagent and conditions." },
+  test: { label: "Wrong prediction", tip: "Link each test to the functional group it detects." },
+  walkout: { label: "Ran out of time", tip: "Build the carbon skeleton first, then add the H atoms." },
+  wrong: { label: "Wrong answer", tip: "Read every option before you pick." },
+  timeout: { label: "Ran out of time", tip: "Answer before the bar fills up." }
+};
+
+/* =================== SCREENS =================== */
+var G = { tier: null, student: null, attempts: {} };
+var SCREENS = ["scr-start", "scr-menu", "scr-intro", "scr-play", "scr-boss", "scr-bend", "scr-result"];
+function show(id) {
+  SCREENS.forEach(function (s) { $(s).hidden = s !== id; });
+  var dark = id === "scr-boss" || id === "scr-bend";
+  document.body.classList.toggle("dark", dark);
+  $("btn-quit").hidden = id === "scr-start" || id === "scr-menu";
+  if (id === "scr-start" || id === "scr-menu" || id === "scr-intro" || id === "scr-result") Music.play("menu");
+  else if (id === "scr-play") Music.play("diner");
+  else if (id === "scr-boss") Music.play("boss");
+  window.scrollTo(0, 0);
+}
+
+/* =================== START =================== */
+(function setup() {
+  var sel = $("in-cls");
+  CLASSES.forEach(function (c) { var o = document.createElement("option"); o.textContent = c; sel.appendChild(o); });
+  var st = load("student", null);
+  if (st) { $("in-name").value = st.name || ""; sel.value = st.cls || ""; $("in-reg").value = st.reg || ""; if (st.tier) setTier(st.tier); }
+  $("demo-mol").innerHTML = molSVG("CCO");
+  var dsv = $("demo-mol").querySelector("svg"); if (dsv) { dsv.style.height = "92px"; dsv.style.width = "auto"; dsv.style.maxWidth = "100%"; }
+  Music.want = "menu";
+})();
+function setTier(t) { G.tier = t; document.querySelectorAll("#seg-tier .chip").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.tier === t)); }); }
+document.querySelectorAll("#seg-tier .chip").forEach(function (b) { b.addEventListener("click", function () { setTier(b.dataset.tier); Sound.tap(); }); });
+function readStudent() {
+  var name = $("in-name").value.trim(), cls = $("in-cls").value, reg = $("in-reg").value.trim();
+  function err(m) { $("form-err").textContent = m; }
+  if (!name) return err("Type your name."), null;
+  if (!cls) return err("Choose your class."), null;
+  if (!/^\d{1,2}$/.test(reg)) return err("Type your register number (1–2 digits)."), null;
+  if (!G.tier) return err("Choose Combined Science or Pure Chemistry."), null;
+  err("");
+  var s = { name: name, cls: cls, reg: reg, tier: G.tier }; store("student", s); return s;
+}
+$("btn-go").addEventListener("click", function () {
+  var s = readStudent(); if (!s) return;
+  Sound.tone(1, "sine", .01, .0001);
+  G.student = s; G.attempts = {}; Music.cur = null; showMenu();
+});
+$("form-start").addEventListener("submit", function (e) { e.preventDefault(); });
+
+/* =================== PROGRESS + STAGE MENU =================== */
+function progKey() { var s = G.student; return [s.name.toLowerCase().replace(/\s+/g, " "), s.cls, s.reg, G.tier].join("|"); }
+function prog() { return load("progress", {})[progKey()] || {}; }
+function saveStars(id, stars) { var all = load("progress", {}), p = all[progKey()] || {}; if ((p[id] || 0) < stars) p[id] = stars; all[progKey()] = p; store("progress", all); }
+function stageList() { return ["s1", "s2", "s3", "s4", "boss"].filter(function (id) { return STAGES[id].tiers.indexOf(G.tier) >= 0; }); }
+function isUnlocked(i) { var L = stageList(); return i === 0 || /unlock/.test(location.hash) || (prog()[L[i - 1]] || 0) >= 1; }
+function stageNo(id) { return id === "boss" ? "!" : String(stageList().indexOf(id) + 1); }
+function starsHTML(n) { var s = ""; for (var i = 0; i < 3; i++) s += i < n ? "★" : '<span class="off">★</span>'; return '<span class="stg-stars">' + s + "</span>"; }
+function showMenu() {
+  show("scr-menu");
+  $("m-tier").textContent = TIERNAME[G.tier];
+  $("m-hi").textContent = "Welcome, " + G.student.name.split(" ")[0] + "!";
+  var L = stageList(), p = prog(), html = "";
+  L.forEach(function (id, i) {
+    var st = STAGES[id], un = isUnlocked(i), stars = p[id] || 0, status;
+    if (!un) status = "LOCKED";
+    else if (stars) status = starsHTML(stars) + "<br>CLEARED";
+    else status = '<span class="tag-new">' + (i === 0 || (p[L[i - 1]] || 0) ? "PLAY" : "OPEN") + "</span>";
+    html += '<button type="button" class="stg' + (id === "boss" ? " boss-stg" : "") + (un ? "" : " locked") + '" data-id="' + id + '"' + (un ? "" : ' aria-disabled="true"') + '>' +
+      '<span class="no">' + stageNo(id) + '</span><span><b>' + (id === "boss" ? "BOSS: " + st.name.toUpperCase() : st.name) + '</b><span class="d">' + esc(st.desc) + '</span></span><span class="st">' + status + "</span></button>";
+  });
+  $("m-list").innerHTML = html;
+  var next = L.filter(function (id, i) { return isUnlocked(i) && !(p[id] || 0); })[0];
+  $("btn-continue").textContent = next ? "Continue: " + (next === "boss" ? "Boss fight" : "Stage " + stageNo(next)) + " ▶" : "All stages cleared! Replay the boss ▶";
+  $("btn-continue").dataset.id = next || "boss";
+  $("m-sub").textContent = next ? "Clear each stage to unlock the next." : "You've cleared the whole shift. Replay any stage to beat your stars.";
+}
+$("m-list").addEventListener("click", function (e) {
+  var b = e.target.closest(".stg"); if (!b) return;
+  if (b.classList.contains("locked")) { Sound.bad(); b.animate && b.animate([{ transform: "translateX(-6px)" }, { transform: "translateX(6px)" }, { transform: "none" }], { duration: 250 }); return; }
+  Sound.tap(); showIntro(b.dataset.id);
+});
+$("btn-continue").addEventListener("click", function () { Sound.tap(); showIntro(this.dataset.id); });
+$("btn-player").addEventListener("click", function () { show("scr-start"); });
+$("btn-quit").addEventListener("click", function () { stopPatience(); stopBossTimer(); Confetti.stop(); showMenu(); });
+
+/* =================== STAGE INTRO =================== */
+var INTRO = {
+  s1: { list: ["Customers order a molecule by its name, formula or description.", "Drag C, H and O atoms onto the plate, then tap between two atoms to bond them.", "Every carbon needs 4 bonds, every oxygen 2 and every hydrogen 1.", "Wrong dishes come back with a hint, and bond counters appear to help you."], pure: "Names like butane mean a straight chain. If the ticket only gives a formula, any isomer is fine." },
+  s2: { list: ["Each table wants different isomers: the same molecular formula, but a different structure.", "Build one isomer and serve it. It takes a seat. Then build the next one.", "Flipping or bending a chain doesn't make a new isomer!"] },
+  s3: { list: ["Each customer wants a product, but the fridge only has the starting chemicals.", "First pick the kitchen station with the right reagents and conditions.", "Then build the product's displayed formula on the plate."], pure: "Some orders need two stations, one after the other." },
+  s4: { list: ["The food critic runs chemical tests on the diner's dishes.", "Pick the dish, result or name the critic is after before they lose interest.", "Every answer comes with the chemistry behind it."] },
+  boss: { list: ["The Health Inspector's surprise check: crude oil, fuels, homologous series and reactions.", "Answer correctly to land a hit. A wrong answer, or running out of time, costs a heart.", "You have 3 hearts."] }
+};
+var curStage = null;
+function showIntro(id) {
+  curStage = id; show("scr-intro");
+  var it = INTRO[id], list = it.list.slice(); if (G.tier === "pure" && it.pure) list.push(it.pure);
+  $("i-pill").textContent = id === "boss" ? "Boss fight" : "Stage " + stageNo(id) + " · " + TIERNAME[G.tier];
+  $("i-title").textContent = STAGES[id].name;
+  $("i-list").innerHTML = list.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("");
+  $("i-goal").textContent = id === "boss" ? "Goal: land " + HITS_TO_WIN[G.tier] + " hits before you lose 3 hearts." :
+    "Goal: " + { s1: "serve", s2: "fill", s3: "serve", s4: "pass" }[id] + " at least " + PASS[id] + " of " + ORDERS[id] + " " + { s1: "customers", s2: "tables", s3: "orders", s4: "tests" }[id] + " to clear this stage.";
+  $("btn-istart").textContent = id === "boss" ? "Face the inspector ▶" : "Start the shift ▶";
+}
+$("btn-istart").addEventListener("click", function () { Sound.tap(); startStage(curStage); });
+
+/* =================== DINER STAGES =================== */
+var D = null, pTimer = null;
+function makeOrders(id) {
+  var t = G.tier;
+  if (id === "s1") {
+    var mine = S1.filter(function (o) { return t === "pure" || o[0] === "cs"; });
+    var plan = t === "cs" ? { alkane: 2, alkene: 2, alcohol: 3, acid: 1 } : { alkane: 1, alkene: 1, alcohol: 2, acid: 2, ester: 2 };
+    var out = [];
+    Object.keys(plan).forEach(function (grp) {
+      var cand = shuffle(mine.filter(function (o) { return o[1] === grp; })), used = {};
+      if (t === "pure") cand.sort(function (a, b) { return (b[0] === "pure") - (a[0] === "pure"); }); // Pure gets mostly harder ones
+      cand.forEach(function (o) { var c = cs(o[4][0]); if (out.filter(function (x) { return x[1] === grp; }).length < plan[grp] && !used[c]) { used[c] = 1; out.push(o); } });
+    });
+    return out.map(function (o) { return { grp: o[1], mode: o[2], dish: o[3], accept: o[4], note: o[5] || "" }; });
+  }
+  if (id === "s2") return S2.slice(0, 3).concat([pick(S2.slice(3))]);
+  if (id === "s3") {
+    var pool = S3.filter(function (o) { return t === "pure" || o.t === "cs"; }), res;
+    if (t === "cs") res = shuffle(pool).slice(0, ORDERS.s3);
+    else {
+      var two = shuffle(pool.filter(function (o) { return o.type === "Two-step"; })), est = shuffle(pool.filter(function (o) { return o.type === "Esterification"; })), hyd = shuffle(pool.filter(function (o) { return o.type === "Hydration"; }));
+      res = [hyd[0], est[0], two[0]];
+      shuffle(pool).forEach(function (o) { if (res.length < ORDERS.s3 && res.indexOf(o) < 0 && o.type !== "Two-step") res.push(o); });
+      res = shuffle(res.slice(0, 3)).concat(res.slice(3)); res.sort(function (a, b) { return (a.path.length) - (b.path.length); });
+    }
+    return res;
+  }
+  if (id === "s4") {
+    var keys = t === "cs" ? shuffle(CRITIC_CS).slice(0, ORDERS.s4) : shuffle(CRITIC_PURE).slice(0, 4).concat(shuffle(CRITIC_CS).slice(0, ORDERS.s4 - 4));
+    return shuffle(keys).map(function (k) { return CRITIC[k](pools()); });
+  }
+}
+function startStage(id) {
+  Confetti.stop();
+  if (id === "boss") return startBoss();
+  G.attempts[id] = (G.attempts[id] || 0) + 1;
+  D = { id: id, orders: makeOrders(id), i: -1, served: 0, tips: 0, sends: 0, log: [], t0: Date.now(), attempt: G.attempts[id], custs: shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) };
+  show("scr-play");
+  $("h-stage").innerHTML = "STAGE " + stageNo(id) + " · " + esc(STAGES[id].name.toUpperCase()) + '<span id="h-tier">' + TIERNAME[G.tier].toUpperCase() + "</span>";
+  $("h-olbl").textContent = { s1: "ORDER", s2: "TABLE", s3: "ORDER", s4: "TEST" }[id];
+  nextOrder();
+}
+function hud() { $("h-order").textContent = Math.min(D.i + 1, D.orders.length) + "/" + D.orders.length; $("h-served").textContent = D.served; $("h-tips").textContent = "$" + D.tips; }
+function logA(type, ok, err, text, picked, right) { D.log.push({ type: type, ok: ok, err: err, text: text, picked: picked, right: right }); }
+function setFace(mood) { var o = D.order; $("o-face").innerHTML = D.id === "s4" ? criticSVG(mood) : custSVG(o.cust, mood); D.mood = mood; }
+function fb(kind, html) { var f = $("o-fb"); if (!kind) { f.hidden = true; return; } f.className = "fb " + kind; f.innerHTML = html; f.hidden = false; }
+function startPatience(secs) {
+  stopPatience(); D.limit = secs; D.left = secs; D.paused = false; D.lastT = Date.now(); paintPatience();
+  pTimer = setInterval(function () {
+    var now = Date.now(), dt = (now - D.lastT) / 1000; D.lastT = now;
+    if (D.paused || document.hidden) return;
+    D.left = Math.max(0, D.left - dt); paintPatience();
+    if (D.left <= 0) { stopPatience(); timeUp(); }
+  }, 250);
+}
+function stopPatience() { clearInterval(pTimer); pTimer = null; }
+function frac() { return D.limit ? D.left / D.limit : 1; }
+function paintPatience() {
+  var p = frac(), b = $("o-pbar"); b.style.width = (p * 100) + "%"; b.style.background = p > .5 ? "#1E9E62" : p > .2 ? "#FF8243" : "#E2463A";
+  var m = moodFor(p); if (m !== D.mood && !D.done) setFace(m);
+}
+function showDone(title, msg, tip, red) {
+  D.done = true; D.paused = true; stopPatience(); P.locked = true;
+  $("d-title").textContent = title; $("d-title").className = red ? "red" : "";
+  $("d-msg").innerHTML = msg; $("d-tip").textContent = tip; $("d-tip").hidden = !tip;
+  $("btn-next").textContent = D.i + 1 >= D.orders.length ? "Finish the shift ▶" : { s1: "Next customer ▶", s2: "Next table ▶", s3: "Next customer ▶", s4: "Next test ▶" }[D.id];
+  $("o-done").hidden = false; hud();
+}
+$("btn-next").addEventListener("click", function () { Sound.tap(); nextOrder(); });
+function earnTip() { var t = Math.max(1, Math.round(2 + frac() * 6 - (D.tries || 0))); D.tips += t; return t; }
+function served(msg) { D.served++; var t = earnTip(); setFace("delighted"); Sound.ding(); setTimeout(function () { Sound.ok(); }, 250); showDone({ s1: "ORDER UP!", s2: "TABLE SERVED!", s3: "ORDER UP!", s4: "IMPRESSED!" }[D.id], msg, "TIP +$" + t); }
+function sendBack(err, msg, flash) {
+  D.sends++; D.tries = (D.tries || 0) + 1;
+  if (!P.counter && err !== "station") { P.counter = true; ptoast("Bond counters are on to help you."); }
+  P.flash = flash || []; paintPlate(); if (P.flash.length) setTimeout(function () { P.flash = []; paintPlate(); }, 1600);
+  fb("bad", msg); Sound.bad(); setFace("angry"); setTimeout(function () { if (!D.done) setFace(moodFor(frac())); }, 1200);
+}
+function timeUp() {
+  var o = D.order;
+  if (D.id === "s4") { logA(o.type, false, "walkout", stripTags(o.q), "(no answer)", answerText(o)); markCritic(-1); }
+  else logA(D.ltype, false, "walkout", D.ltext, "(walked out)", D.lright);
+  setFace("angry"); Sound.lose();
+  showDone(D.id === "s4" ? "BORED!" : "WALKED OUT!", D.id === "s4" ? "The critic lost interest. " + o.why : D.id === "s2" ? "The table got tired of waiting." : "This customer got tired of waiting.", "", true);
+}
+function nextOrder() {
+  D.i++; D.done = false; D.tries = 0; P.locked = false;
+  $("o-done").hidden = true; fb(null);
+  if (D.i >= D.orders.length) return endStage();
+  var o = D.order = D.orders[D.i]; o.cust = D.custs[D.i % 10];
+  ["o-fridge", "o-steps", "o-seats", "w-stations", "w-plate", "w-critic", "c-show"].forEach(function (x) { $(x).hidden = true; });
+  $("o-ticket").hidden = false; $("o-plbl").textContent = D.id === "s4" ? "Interest" : "Patience";
+  ({ s1: loadS1, s2: loadS2, s3: loadS3, s4: loadS4 })[D.id](o);
+  hud(); D.mood = null; paintPatience();
+}
+function ticket(table, mode, dish, note) { $("t-table").textContent = table; $("t-mode").textContent = mode; $("t-dish").innerHTML = dish; $("t-note").textContent = note || ""; $("t-note").hidden = !note; }
+function patienceFor(smi, mult) { return Math.round((PATIENCE.base + PATIENCE.perAtom * atomsInSmi(smi)) * (G.tier === "cs" ? PATIENCE.cs : 1) * (mult || 1)); }
+function showPlate(els) { $("w-plate").hidden = false; plateReset(els || ["C", "H", "O"]); }
+
+/* ---- Stage 1: Build Counter ---- */
+function loadS1(o) {
+  var nm = o.mode === "By formula" ? o.dish : o.dish.toLowerCase(), say = pick(SAY[o.mode]);
+  $("o-say").textContent = say.replace("{d}", nm).replace("{D}", o.dish);
+  ticket("Table " + (D.i + 1), o.mode, o.mode === "By formula" ? fx(o.dish) : esc(o.dish), o.note);
+  D.ltype = GROUPNAME[o.grp]; D.ltext = o.mode + ": " + o.dish; D.lright = nameOfSmi(o.accept[0]);
+  showPlate(); startPatience(patienceFor(o.accept[0]));
+}
+function serveBuild(accept, okMsg) {
+  var v = plateCheck();
+  if (v.err) { logA(D.ltype, false, v.err, D.ltext, ERR[v.err].label.toLowerCase(), D.lright); return sendBack(v.err, v.msg, v.flash), null; }
+  var hit = accept.map(cs).indexOf(v.canon) >= 0;
+  if (!hit) { var w = whyWrong(accept[0], v); logA(D.ltype, false, w.err, D.ltext, NAMES[v.canon] || fxt(v.formula), D.lright); sendBack(w.err, w.msg); return null; }
+  logA(D.ltype, true, null, D.ltext, NAMES[v.canon], D.lright);
+  return v;
+}
+$("btn-serve").addEventListener("click", function () {
+  if (!D || D.done || P.locked) return;
+  if (D.id === "s1") { var v = serveBuild(D.order.accept); if (v) served("You served " + esc(NAMES[v.canon] || v.formula) + " (" + fx(v.formula) + ")."); }
+  else if (D.id === "s2") serveS2();
+  else if (D.id === "s3") { var v3 = serveBuild(D.order.make); if (v3) served("You served " + esc(NAMES[v3.canon] || v3.formula) + " (" + fx(v3.formula) + ")."); }
+});
+$("btn-clear").addEventListener("click", function () { if (P.locked) return; var c = P.counter; plateReset(); P.counter = c; paintPlate(); Sound.tap(); });
+
+/* ---- Stage 2: Big Table ---- */
+function loadS2(o) {
+  D.seats = []; D.seatSnaps = [];
+  $("o-say").textContent = o.say;
+  ticket("Table " + (D.i + 1), o.need + " different isomers", fx(o.f) + " · " + GROUPNAME[o.cls].replace(/s$/, "").toLowerCase(), "Same formula, different structures.");
+  D.ltype = "Isomers: " + o.f; D.ltext = o.need + " different " + o.f + " " + o.cls + "s"; D.lright = o.set.map(nameOfSmi).join(", ");
+  $("o-seats").hidden = false; paintSeats(); showPlate(o.cls === "ester" ? ["C", "H", "O"] : o.f.indexOf("O") >= 0 ? ["C", "H", "O"] : ["C", "H"]);
+  startPatience(Math.round((PATIENCE.base + PATIENCE.perAtom * atomsInSmi(o.set[0])) * o.need * .8));
+}
+function paintSeats(flashIdx) {
+  var o = D.order, h = "";
+  for (var i = 0; i < o.need; i++) h += D.seats[i] ? '<div class="seat' + (i === flashIdx ? " flash" : "") + '">' + molSVG(D.seatSnaps[i]) + "<span>" + esc(NAMES[D.seats[i]] || "") + "</span></div>" : '<div class="seat empty">Seat ' + (i + 1) + "<br>waiting…</div>";
+  $("o-seats").innerHTML = h;
+}
+function serveS2() {
+  var o = D.order, v = plateCheck(), err = null, msg;
+  if (v.err) { err = v.err; msg = v.msg; }
+  else if (v.formula !== o.f) { err = "formula"; msg = "That's " + fx(v.formula) + ". This table ordered " + fx(o.f) + ". Count every atom."; }
+  else if (v.info.cls !== o.cls) { err = "group"; msg = "That's " + fx(v.formula) + ", but it's " + CLASSNAME[v.info.cls] + ". This table wants " + CLASSNAME[o.cls] + ". " + (GROUPTIP[o.cls] || ""); }
+  else if (o.set.map(cs).indexOf(v.canon) < 0) { err = "offmenu"; msg = "That structure isn't on our menu."; }
+  else if (D.seats.indexOf(v.canon) >= 0) { err = "duplicate"; var k = D.seats.indexOf(v.canon); msg = "That's " + esc(NAMES[v.canon]) + " again, the same as seat " + (k + 1) + ". Flipping or bending a chain doesn't make a new isomer."; paintSeats(k); }
+  if (err) { logA(D.ltype, false, err, D.ltext, v.canon ? (NAMES[v.canon] || fxt(v.formula)) : ERR[err].label.toLowerCase(), D.lright); return sendBack(err, msg, v.flash); }
+  logA(D.ltype, true, null, D.ltext, NAMES[v.canon], D.lright);
+  D.seats.push(v.canon); D.seatSnaps.push(v.snap); paintSeats();
+  if (D.seats.length >= o.need) return served("Every seat got a different isomer of " + fx(o.f) + ".");
+  fb("good", "Seat " + D.seats.length + " gets " + esc(NAMES[v.canon]) + ". " + (o.need - D.seats.length) + " more to go: build a different isomer.");
+  Sound.ok(); var c = P.counter; plateReset(P.els); P.counter = c; paintPlate();
+}
+
+/* ---- Stage 3: Kitchen Stations ---- */
+function ingHTML(f) { return f[0] ? '<span class="ing">' + molSVG(f[0]) + esc(nameOfSmi(f[0])) + "</span>" : '<span class="ing"><b style="font-size:1.1rem">' + fx(f[2]) + "</b>" + esc(f[1]) + "</span>"; }
+function loadS3(o) {
+  o.step = 0;
+  $("o-say").textContent = o.say;
+  var prod = o.name || cap(nameOfSmi(o.make[0]));
+  ticket("Table " + (D.i + 1), o.path.length > 1 ? "Two steps" : "One step", "Make: " + esc(prod), o.note);
+  $("o-fridge").hidden = false; $("o-items").innerHTML = o.from.map(ingHTML).join('<span class="plus">+</span>');
+  D.ltype = o.type; D.ltext = o.from.map(function (f) { return f[0] ? nameOfSmi(f[0]) : f[1]; }).join(" + ") + " → " + prod; D.lright = o.path.map(function (p) { return STATIONS[p].name; }).join(", then ") + "; " + nameOfSmi(o.make[0]);
+  paintSteps(); paintStations();
+  startPatience(patienceFor(o.make[0], 1.2 + .3 * (o.path.length - 1)));
+}
+function paintSteps() {
+  var o = D.order, h = "";
+  o.path.forEach(function (p, i) { h += '<span class="' + (i < o.step ? "done" : i === o.step ? "now" : "") + '">' + (i + 1) + ". Station</span>"; });
+  h += '<span class="' + (o.step >= o.path.length ? "now" : "") + '">' + (o.path.length + 1) + ". Plate it</span>";
+  $("o-steps").innerHTML = h; $("o-steps").hidden = false;
+}
+function paintStations() {
+  var ids = Object.keys(STATIONS).filter(function (k) { return G.tier === "pure" || !STATIONS[k].pure; });
+  $("w-stations").hidden = false; $("w-plate").hidden = true;
+  $("w-stitle").textContent = D.order.path.length > 1 ? "Step " + (D.order.step + 1) + ": pick the kitchen station" : "Pick the kitchen station";
+  $("w-slist").innerHTML = ids.map(function (k) { var s = STATIONS[k]; return '<button type="button" class="station" data-k="' + k + '">' + (ST_IMG[k] ? '<img src="station-' + k + '.png" alt="">' : '<svg viewBox="0 0 48 48" aria-hidden="true">' + ICON[k] + "</svg>") + "<b>" + esc(s.name) + "</b><span>" + esc(s.cond) + "</span></button>"; }).join("");
+}
+$("w-slist").addEventListener("click", function (e) {
+  var b = e.target.closest(".station"); if (!b || !D || D.done || b.disabled) return;
+  var o = D.order, k = b.dataset.k, want = o.path[o.step];
+  var fromName = o.step === 0 ? o.from.map(function (f) { return f[0] ? nameOfSmi(f[0]) : f[1].toLowerCase(); }).join(" and ") : nameOfSmi(o.via[o.step - 1]);
+  var toName = o.step + 1 < o.path.length ? nameOfSmi(o.via[o.step]) : (o.name ? o.name.toLowerCase() : nameOfSmi(o.make[0]));
+  if (k !== want) {
+    b.classList.add("wrong"); b.disabled = true;
+    logA(o.type, false, "station", D.ltext, STATIONS[k].name, STATIONS[want].name);
+    return sendBack("station", "<b>Not the " + esc(STATIONS[k].name.toLowerCase()) + ".</b> " + esc(STATIONS[k].does) + '<span class="why">You need to turn ' + esc(fromName) + " into " + esc(toName) + ".</span>");
+  }
+  b.classList.add("right"); Sound.ok(); o.step++; paintSteps();
+  if (o.step < o.path.length) {
+    fb("good", "<b>" + esc(STATIONS[k].name) + ":</b> " + esc(STATIONS[k].cond.toLowerCase()) + ". You now have " + esc(nameOfSmi(o.via[o.step - 1])) + ".");
+    $("o-items").innerHTML = ingHTML([o.via[o.step - 1]]);
+    setTimeout(paintStations, 700);
+  } else {
+    fb("good", "<b>" + esc(STATIONS[k].name) + ":</b> " + esc(STATIONS[k].cond.toLowerCase()) + ". Now build the product: <b>" + esc(toName) + "</b>.");
+    setTimeout(function () { $("w-stations").hidden = true; showPlate(["C", "H", "O"].concat(o.extra || [])); }, 700);
+  }
+});
+
+/* ---- Stage 4: Food Critic ---- */
+function answerText(o) { return o.kind === "plates" ? "Dish " + "ABC"[o.ans] + " (" + nameOfSmi(o.plates[o.ans]) + ")" : stripTags(o.opts[o.ans]); }
+function loadS4(o) {
+  $("o-say").innerHTML = o.q;
+  ticket("Test " + (D.i + 1), o.type, "Food critic", "");
+  $("t-note").hidden = true;
+  $("w-critic").hidden = false;
+  if (o.show) { $("c-show").hidden = false; $("c-show").innerHTML = molSVG(o.show); } else $("c-show").hidden = true;
+  $("c-dishes").innerHTML = o.kind === "plates" ? o.plates.map(function (s, i) { return '<button type="button" class="dish-btn" data-i="' + i + '">' + molSVG(s) + '<span class="lbl">DISH ' + "ABC"[i] + "</span></button>"; }).join("") : "";
+  $("c-opts").innerHTML = o.kind === "text" ? o.opts.map(function (t, i) { return '<button type="button" class="topt" data-i="' + i + '"><span class="k">' + "ABCD"[i] + "</span><span>" + t + "</span></button>"; }).join("") : "";
+  startPatience(PATIENCE.critic * (G.tier === "cs" ? PATIENCE.cs : 1));
+}
+function markCritic(i) {
+  var o = D.order, btns = document.querySelectorAll(o.kind === "plates" ? "#c-dishes .dish-btn" : "#c-opts .topt");
+  btns.forEach(function (b, j) { b.disabled = true; if (j === o.ans) b.classList.add("right"); else if (j === i) b.classList.add("wrong"); });
+}
+function criticPick(e) {
+  var b = e.target.closest("button"); if (!b || !D || D.done || b.disabled) return;
+  var o = D.order, i = +b.dataset.i, ok = i === o.ans;
+  markCritic(i);
+  logA(o.type, ok, ok ? null : "test", stripTags(o.q), o.kind === "plates" ? "Dish " + "ABC"[i] + " (" + nameOfSmi(o.plates[i]) + ")" : stripTags(o.opts[i]), answerText(o));
+  if (ok) served(o.why);
+  else { D.sends++; setFace("angry"); Sound.bad(); showDone("HMPH!", "<b>Not quite.</b> The answer was " + esc(answerText(o)) + ". " + o.why, "", true); }
+}
+$("c-dishes").addEventListener("click", criticPick);
+$("c-opts").addEventListener("click", criticPick);
+
+/* ---- end of a diner stage ---- */
+function endStage() {
+  stopPatience();
+  var id = D.id, tot = D.orders.length, s = D.served, stars = s >= PASS[id] ? 1 : 0;
+  if (stars && s >= tot - 1) stars = 2;
+  if (s === tot && D.sends <= 2) stars = 3;
+  D.stars = stars; D.cleared = stars > 0;
+  if (stars) saveStars(id, stars);
+  var R = summarise(D.log); R.secs = (Date.now() - D.t0) / 1000; R.kind = "stage";
+  R.title = D.cleared ? "Stage cleared! " + "★★★".slice(0, stars) : "Not cleared yet";
+  R.sub = (id === "s2" ? "Tables filled: " : id === "s4" ? "Tests passed: " : "Customers served: ") + s + " of " + tot + ". You need " + PASS[id] + " to clear " + STAGES[id].name + "." + (D.cleared && nextStage(id) ? " The next stage is unlocked!" : "");
+  R.l1 = id === "s4" ? "Passed" : "Served"; R.score = s; R.total = tot; R.points = "$" + D.tips;
+  R.pct = R.n ? Math.round(R.ok / R.n * 100) : 0;
+  R.chapter = "Molecule Diner · Stage " + stageNo(id) + " " + STAGES[id].name + " · " + TIERNAME[G.tier] + " · attempt " + D.attempt + " (" + (D.cleared ? stars + " stars" : "not cleared") + ")";
+  R.summary = "Stage " + stageNo(id) + " " + STAGES[id].name + " | " + TIERNAME[G.tier] + " | Served " + s + "/" + tot + " | Sent back " + D.sends + " | Accuracy " + R.pct + "% | Wrong most: " + (R.weakTypes.length ? R.weakTypes.slice(0, 3).join(", ") : "none") + " | By type: " + R.typeLine + " | Errors: " + (R.errLine || "none");
+  R.tips = D.tips; R.stage = id; R.cleared = D.cleared;
+  if (D.cleared) { Sound.win(); Confetti.go(); } else Sound.lose();
+  paintResults(R); sendResults(R);
+}
+function nextStage(id) { var L = stageList(), i = L.indexOf(id); return L[i + 1] || null; }
+function summarise(log) {
+  var R = { log: log, n: log.length, ok: log.filter(function (x) { return x.ok; }).length, byType: {}, errs: {} };
+  log.forEach(function (x) { var b = R.byType[x.type] = R.byType[x.type] || [0, 0]; b[1]++; if (x.ok) b[0]++; if (!x.ok) R.errs[x.err] = (R.errs[x.err] || 0) + 1; });
+  R.errKeys = Object.keys(R.errs).sort(function (a, b) { return R.errs[b] - R.errs[a]; });
+  R.weakTypes = Object.keys(R.byType).filter(function (k) { return R.byType[k][1] > R.byType[k][0]; }).sort(function (a, b) { return (R.byType[b][1] - R.byType[b][0]) - (R.byType[a][1] - R.byType[a][0]); });
+  R.typeLine = Object.keys(R.byType).map(function (k) { return k + " " + R.byType[k][0] + "/" + R.byType[k][1]; }).join(", ");
+  R.errLine = R.errKeys.map(function (k) { return (ERR[k] ? ERR[k].label : k) + " x" + R.errs[k]; }).join("; ");
+  return R;
+}
+
+/* =================== BOSS FIGHT =================== */
+var B = null, raf = 0;
+function paintBossSprites() {
+  if (!$("b-hero")) return;
+  $("b-hero").innerHTML = art("hero", HERO_FALL); $("b-hero").classList.toggle("pic", SP.hero.ok);
+  $("b-mon").innerHTML = art("boss", BOSS_FALL); $("b-mon").classList.toggle("pic", SP.boss.ok);
+  $("b-bolt").innerHTML = BOLT_SVG;
+}
+$("b-name").textContent = BOSS_NAME;
+var hurtTimers = {};
+function swapArt(id, key, base) {
+  var img = $(id).querySelector("img"); if (!img || !SP[key] || !SP[key].ok) return;
+  clearTimeout(hurtTimers[id]); img.src = IMG[key];
+  hurtTimers[id] = setTimeout(function () { var i = $(id).querySelector("img"); if (i) i.src = IMG[base]; }, HURT_MS);
+}
+function bossBag() {
+  var bank = BOSSQ_CS.concat(G.tier === "pure" ? BOSSQ_PURE : []);
+  if (G.tier === "pure") { var p = shuffle(BOSSQ_PURE).slice(0, 6), c = shuffle(BOSSQ_CS); return shuffle(p.concat(c)); }
+  return shuffle(bank);
+}
+function startBoss() {
+  Confetti.stop();
+  G.attempts.boss = (G.attempts.boss || 0) + 1;
+  B = { hp: HITS_TO_WIN[G.tier], maxhp: HITS_TO_WIN[G.tier], hearts: HEARTS, max: HEARTS, n: 0, correct: 0, phase2: false, combo: 0, bestCombo: 0, bag: bossBag(), t0: Date.now(), log: [], points: 0, attempt: G.attempts.boss };
+  show("scr-boss");
+  $("b-hero").className = "sprite hero-sp"; $("b-mon").className = "sprite mon-sp";
+  clearTimeout(hurtTimers["b-hero"]); clearTimeout(hurtTimers["b-mon"]); paintBossSprites();
+  paintBossHud(); nextQ();
+}
+function heartSVG() { return '<svg viewBox="0 0 7 7" shape-rendering="crispEdges"><path fill="#0D0B1A" d="M1 0h2v1H1zM4 0h2v1H4zM0 1h1v3H0zM6 1h1v3H6zM1 4h1v1H1zM5 4h1v1H5zM2 5h1v1H2zM4 5h1v1H4zM3 6h1v1H3zM3 1h1v1H3z"/><path fill="#FF4D5E" d="M1 1h2v1H1zM4 1h2v1H4zM1 2h5v2H1zM2 4h3v1H2zM3 5h1v1H3z"/><path fill="#fff" d="M2 2h1v1H2z"/></svg>'; }
+function paintBossHud(breakIdx) {
+  var h = ""; for (var i = 0; i < B.max; i++) h += '<span class="' + (i >= B.hearts ? "lost" : "") + (i === breakIdx ? " breaking" : "") + '">' + heartSVG() + "</span>";
+  $("b-hearts").innerHTML = h;
+  var p = Math.max(0, B.hp) / B.maxhp * 100;
+  $("b-left").textContent = "· " + Math.max(0, B.hp) + (B.hp === 1 ? " HIT" : " HITS") + " LEFT";
+  $("b-hp").style.width = p + "%"; $("b-hp").className = p <= 30 ? "low" : "";
+}
+function nextQ() {
+  if (B.hp <= 0 || B.hearts <= 0) return bossEnd();
+  $("b-fb").hidden = true; $("b-bolt").classList.remove("fly");
+  if (!B.bag.length) B.bag = bossBag();
+  var q = B.bag.shift(), opts = shuffle([{ t: q[2], ok: true }].concat(q[3].map(function (w) { return { t: w, ok: false }; })));
+  B.q = { type: q[0], text: q[1], opts: opts, right: q[2], work: q[4] }; B.n++;
+  $("b-qtype").textContent = (B.phase2 ? "PHASE 2 · " : "") + "INSPECTION " + B.n + " · " + q[0].toUpperCase();
+  $("b-qtext").textContent = q[1];
+  $("b-opts").innerHTML = opts.map(function (o, i) { return '<button type="button" class="qopt" data-i="' + i + '"><span class="k">' + "ABCD"[i] + '</span><span class="tx">' + esc(o.t) + "</span></button>"; }).join("");
+  B.t0q = performance.now(); B.secs = BOSS_SECS[G.tier]; B.locked = false;
+  tick();
+}
+function tick() {
+  var el = (performance.now() - B.t0q) / 1000, left = Math.max(0, B.secs - el);
+  $("b-cbar").style.width = Math.min(100, el / B.secs * 100) + "%";
+  $("b-secs").textContent = Math.ceil(left);
+  $("b-charge").classList.toggle("warn", left <= 10);
+  if (left <= 0) { answer(-1); return; }
+  raf = requestAnimationFrame(tick);
+}
+function stopBossTimer() { cancelAnimationFrame(raf); }
+$("b-opts").addEventListener("click", function (e) { var b = e.target.closest(".qopt"); if (b && !B.locked) answer(+b.dataset.i); });
+function floatText(txt, onBoss, hurt) {
+  var s = document.createElement("span"); s.className = "dmg" + (hurt ? " hurt" : ""); s.textContent = txt;
+  s.style[onBoss ? "left" : "right"] = onBoss ? "12%" : "8%"; s.style.top = "30%";
+  $("b-stage").appendChild(s); setTimeout(function () { s.remove(); }, 1100);
+}
+function retrigger(el, cls) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+function answer(i) {
+  B.locked = true; stopBossTimer();
+  var q = B.q, el = (performance.now() - B.t0q) / 1000, o = i >= 0 ? q.opts[i] : null, ok = !!(o && o.ok);
+  var btns = $("b-opts").querySelectorAll(".qopt");
+  q.opts.forEach(function (op, j) { btns[j].disabled = true; if (op.ok) btns[j].classList.add("right"); });
+  if (o && !ok) btns[i].classList.add("wrong");
+  var msg;
+  if (ok) {
+    B.correct++; B.combo++; B.bestCombo = Math.max(B.bestCombo, B.combo);
+    var crit = el <= CRIT_SECS; B.hp = Math.max(0, B.hp - 1);
+    B.points += (crit ? 150 : 100) + Math.round(Math.max(0, B.secs - el)) * 2;
+    retrigger($("b-hero"), "atk"); retrigger($("b-bolt"), "fly");
+    setTimeout(function () { swapArt("b-mon", "bossHurt", "boss"); retrigger($("b-mon"), "hit"); floatText(crit ? "CRITICAL!" : "HIT!", true); Sound.hit(); paintBossHud(); }, 380);
+    msg = '<span class="ans">' + (crit ? "Critical hit! Speed bonus." : "Direct hit!") + "</span> " + (B.hp > 0 ? B.hp + " more to go." : "") + '<br><span class="work">' + esc(q.work) + "</span>";
+  } else {
+    B.combo = 0; B.hearts--;
+    swapArt("b-mon", "bossAtk", "boss"); retrigger($("b-mon"), "atk");
+    setTimeout(function () { swapArt("b-hero", "heroHurt", "hero"); retrigger($("b-hero"), "hit"); retrigger($("b-flash"), "on"); floatText("-1 ♥", false, true); Sound.hurt(); paintBossHud(B.hearts); }, 300);
+    msg = (o ? "<b>Violation!</b> " : "<b>Too slow!</b> The inspector wrote you up. ") + '<br><span class="ans">Answer: ' + esc(q.right) + '</span><br><span class="work">' + esc(q.work) + "</span>";
+  }
+  B.log.push({ type: q.type, ok: ok, err: ok ? null : (o ? "wrong" : "timeout"), text: q.text, picked: o ? o.t : "(no answer)", right: q.right });
+  if (!B.phase2 && B.hp > 0 && B.hp <= B.maxhp / 2) {
+    B.phase2 = true;
+    setTimeout(function () { var p = document.createElement("div"); p.className = "phase"; p.textContent = "THE INSPECTOR IS FURIOUS!"; $("b-stage").appendChild(p); setTimeout(function () { p.remove(); }, 2200); }, 700);
+  }
+  var over = B.hp <= 0 || B.hearts <= 0;
+  $("b-fb").hidden = false; $("b-fb").className = "qfb" + (ok ? "" : " no");
+  $("b-fb-msg").innerHTML = msg;
+  $("b-next").textContent = over ? (B.hp <= 0 ? "PASS INSPECTION ▶" : "CONTINUE ▶") : "NEXT ▶";
+  if (window.matchMedia("(max-width: 759px)").matches) setTimeout(function () { $("b-fb").scrollIntoView({ behavior: "smooth", block: "nearest" }); }, 200);
+}
+$("b-next").addEventListener("click", function () { if (B.hp <= 0 || B.hearts <= 0) bossEnd(); else nextQ(); });
+var bossR = null;
+function bossEnd() {
+  stopBossTimer(); Music.fadeOut();
+  var win = B.hp <= 0; B.win = win;
+  if (win) $("b-mon").classList.add("dead"); else $("b-hero").classList.add("dead");
+  var stars = win ? B.hearts : 0; if (stars) saveStars("boss", stars);
+  var R = summarise(B.log); R.secs = (Date.now() - B.t0) / 1000; R.kind = "boss";
+  R.pct = R.n ? Math.round(R.ok / R.n * 100) : 0;
+  R.title = win ? "Inspection passed! " + "★★★".slice(0, stars) : "Inspection failed… for now";
+  R.sub = "Boss: " + B.correct + " hits from " + B.n + " questions" + (B.attempt > 1 ? " (attempt " + B.attempt + ")" : "") + (win ? ", with " + B.hearts + " heart" + (B.hearts === 1 ? "" : "s") + " left." : ". You needed " + B.maxhp + " hits.");
+  R.l1 = "Hits"; R.score = B.correct; R.total = B.n; R.points = B.points; R.l4 = "Points";
+  R.chapter = "Molecule Diner · Boss attempt " + B.attempt + " (" + (win ? "won" : "lost") + ") · " + TIERNAME[G.tier];
+  R.summary = "Boss attempt " + B.attempt + " (" + (win ? "won, " + stars + " stars" : "lost") + ") | " + TIERNAME[G.tier] + " | Accuracy " + R.pct + "% | Hits " + B.correct + "/" + B.n + " (needed " + B.maxhp + "), best combo " + B.bestCombo + " | Wrong most: " + (R.weakTypes.length ? R.weakTypes.slice(0, 3).join(", ") : "none") + " | By topic: " + R.typeLine;
+  R.stage = "boss"; R.cleared = win; bossR = R;
+  sendResults(R); // log every attempt, so retries are recorded too
+  setTimeout(function () {
+    show("scr-bend");
+    $("scr-bend").className = "bend" + (win ? "" : " lose");
+    $("be-title").textContent = win ? "INSPECTION PASSED!" : "SHUT DOWN!";
+    $("be-sprite").innerHTML = art(win ? "hero" : "heroHurt", HERO_FALL);
+    $("be-msg").textContent = win ? "The Health Inspector stamps your certificate. Molecule Diner stays open! " + B.correct + " hits in " + B.n + " questions." :
+      "The inspector shut the diner down. You landed " + B.correct + " of " + B.maxhp + " hits. Try again: you go straight back to the inspection.";
+    $("be-retry").hidden = win;
+    if (win) { Sound.win(); Confetti.go(); } else Sound.lose();
+  }, win ? 700 : 500);
+}
+$("be-go").addEventListener("click", function () { Confetti.stop(); paintResults(bossR); });
+$("be-retry").addEventListener("click", function () { startBoss(); });
+
+/* =================== RESULTS =================== */
+var lastR = null;
+function paintResults(R) {
+  lastR = R; show("scr-result");
+  $("res-ring").style.setProperty("--p", R.pct); $("res-pct").textContent = R.pct + "%";
+  $("res-title").textContent = R.title; $("res-sub").textContent = R.sub;
+  $("res-l1").textContent = R.l1; $("res-correct").textContent = R.score + "/" + R.total;
+  $("res-acc").textContent = R.pct + "%"; $("res-time").textContent = fmtTime(R.secs);
+  $("res-l4").textContent = R.l4 || "Tips"; $("res-points").textContent = R.points;
+  $("res-bars-h").textContent = R.kind === "boss" ? "By topic" : R.stage === "s4" ? "By test" : R.stage === "s3" ? "By reaction" : "By dish";
+  $("res-bars").innerHTML = Object.keys(R.byType).map(function (k) {
+    var b = R.byType[k], p = Math.round(b[0] / b[1] * 100);
+    return '<div class="bar-row"><span>' + fx(k) + '</span><div class="bar"><i class="' + (p < 60 ? "low" : "") + '" style="width:' + p + '%"></i></div><span class="n">' + b[0] + "/" + b[1] + "</span></div>";
+  }).join("") || "<p>No answers yet.</p>";
+  $("res-weak").innerHTML = R.errKeys.length ? R.errKeys.slice(0, 3).map(function (k) { return "<li><b>" + esc(ERR[k].label) + " ×" + R.errs[k] + "</b><span>" + esc(ERR[k].tip) + "</span></li>"; }).join("") :
+    '<li class="good"><b>No mistakes!</b><span>Everything was right first time.</span></li>';
+  var wrong = R.log.filter(function (x) { return !x.ok; });
+  $("res-review").innerHTML = wrong.length ? wrong.slice(0, 8).map(function (x) {
+    return '<li><span class="tag">' + esc(x.type) + "</span><br>" + esc(x.text) + '<br><span class="you">You: ' + esc(x.picked) + (x.err && ERR[x.err] ? " (" + esc(ERR[x.err].label.toLowerCase()) + ")" : "") + '</span><br><span class="key">Answer: ' + esc(x.right) + "</span></li>";
+  }).join("") : "<li>Nothing to review. Every one was right.</li>";
+  var nx = R.cleared ? nextStage(R.stage) : null;
+  $("btn-rnext").hidden = !nx; if (nx) $("btn-rnext").textContent = nx === "boss" ? "Face the Health Inspector ▶" : "Next: " + STAGES[nx].name + " ▶";
+  $("btn-again").textContent = R.cleared ? "Play again ↻" : "Try again ↻";
+  $("btn-again").classList.toggle("alt", !!nx);
+}
+function post(payload) { return fetch(SUBMIT_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) }); }
+function sendResults(R) {
+  var wrong = R.log.filter(function (x) { return !x.ok; }).map(function (x) { return "[" + x.type + "] " + x.text + " → " + x.picked + " (" + (ERR[x.err] ? ERR[x.err].label : x.err) + "), answer " + x.right; }).join(" | ");
+  var payload = G.payload = {
+    course: SHEET_TAB, chapter: R.chapter,
+    name: G.student.name, cls: G.student.cls, reg: G.student.reg,
+    score: R.score, total: R.total, wrong: wrong || "None",
+    time: Math.round(R.secs), points: typeof R.points === "number" ? R.points : R.tips, summary: R.summary
+  };
+  var box = $("send"), msg = $("send-msg"), btn = $("btn-resend");
+  box.className = "send span"; btn.hidden = true;
+  if (!SUBMIT_URL) { msg.textContent = "Results not sent (no Google Sheet link set up)."; return; }
+  msg.textContent = "Sending your results to Ms Khoo…";
+  post(payload).then(function () { msg.textContent = "✓ Sent! Ms Khoo has your results."; })
+    .catch(function () { box.className = "send span err"; msg.textContent = "Couldn't send. Check your internet, then tap Try again."; btn.hidden = false; });
+}
+$("btn-resend").addEventListener("click", function () {
+  var box = $("send"); $("btn-resend").hidden = true; $("send-msg").textContent = "Sending…";
+  post(G.payload).then(function () { box.className = "send span"; $("send-msg").textContent = "✓ Sent! Ms Khoo has your results."; })
+    .catch(function () { $("send-msg").textContent = "Still couldn't send. Try again when you're online."; $("btn-resend").hidden = false; });
+});
+$("btn-rnext").addEventListener("click", function () { Confetti.stop(); showIntro(nextStage(lastR.stage)); });
+$("btn-again").addEventListener("click", function () { Confetti.stop(); if (lastR.stage === "boss") startBoss(); else startStage(lastR.stage); });
+$("btn-menu").addEventListener("click", function () { Confetti.stop(); showMenu(); });
+
+/* =================== CONFETTI =================== */
+var Confetti = {
+  c: $("confetti"), p: [], on: false,
+  go: function () {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    var c = this.c, w = c.width = innerWidth, h = c.height = innerHeight, cols = ["#FF8243", "#FFC0CB", "#FCE883", "#069494", "#1F2A2E"];
+    c.hidden = false; this.on = true; this.p = [];
+    for (var i = 0; i < 110; i++) this.p.push({ x: Math.random() * w, y: -Math.random() * h, s: 6 + Math.random() * 8, v: 2 + Math.random() * 3, a: Math.random() * 6, col: cols[i % cols.length] });
+    var self = this, cx = c.getContext("2d"), t0 = performance.now();
+    (function frame(t) {
+      if (!self.on) return;
+      cx.clearRect(0, 0, w, h);
+      self.p.forEach(function (p) { p.y += p.v; p.a += .1; cx.fillStyle = p.col; cx.fillRect(p.x + Math.sin(p.a) * 6, p.y, p.s, p.s * .6); });
+      if (t - t0 < 4000) requestAnimationFrame(frame); else self.stop();
+    })(t0);
+  },
+  stop: function () { this.on = false; this.c.hidden = true; }
+};
+
+paintBossSprites();
+if (/debug/.test(location.hash)) window.__MD = { G: G, D: function () { return D; }, B: function () { return B; }, P: P, cs: cs, layoutSmi: layoutSmi, molSVG: molSVG, KNOWN: KNOWN, plateCheck: plateCheck, startStage: startStage, showMenu: showMenu, gxy: gxy, S1: S1, S2: S2, S3: S3, CRITIC: CRITIC, endStage: endStage, startBoss: startBoss, classify: classify, parseSmi: parseSmi };
+
+})();
+</script>
+</body>
+</html>
