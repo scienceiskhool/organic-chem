@@ -916,13 +916,6 @@ function paintPlate() {
   s += '<rect x="4" y="4" width="' + (GW - 8) + '" height="' + (GH - 8) + '" rx="22" fill="#fff" stroke="#1F2A2E" stroke-width="3"/>';
   s += '<text x="' + (GW - 18) + '" y="' + (GH - 14) + '" text-anchor="end" font-family="Press Start 2P, monospace" font-size="9" fill="#9AA7AB">PLATE</text>';
   for (var c = 0; c < COLS; c++) for (var r = 0; r < ROWS; r++) { var k = key(c, r), p = gxy(k); if (!P.atoms[k]) s += '<circle cx="' + p.x + '" cy="' + p.y + '" r="3.5" fill="#C9D3D5"/>'; }
-  // dashed "tap to bond" hints between neighbouring atoms (not between two 1-bond atoms)
-  SLOTS.forEach(function (sl) {
-    if (sl.len !== 1 || !usable(sl) || P.bonds[sl.bk]) return;
-    if (mono(sl.a) && mono(sl.b)) return;
-    if (P.counter && (pFull(sl.a) || pFull(sl.b))) return;
-    s += '<circle cx="' + sl.mid.x + '" cy="' + sl.mid.y + '" r="7" fill="#fff" stroke="#069494" stroke-width="2.5" stroke-dasharray="4 3"/>';
-  });
   Object.keys(P.bonds).forEach(function (bk) { var e = ends(bk); s += bondG(gxy(e[0]), gxy(e[1]), P.bonds[bk]); });
   if (P.drag && P.target) { var tp = gxy(P.target); s += '<circle cx="' + tp.x + '" cy="' + tp.y + '" r="' + (R + 4) + '" fill="#FEF8D9" stroke="#069494" stroke-width="3" stroke-dasharray="6 4"/>'; }
   Object.keys(P.atoms).forEach(function (k) { var p = gxy(k); s += atomG(P.atoms[k], p.x, p.y, { bad: P.flash.indexOf(k) >= 0, badge: P.counter ? EL[P.atoms[k]].v - pUsed(k) : null }); });
