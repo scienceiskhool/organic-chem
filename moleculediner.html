@@ -657,8 +657,9 @@ var BOSS_SECS = { cs: 50, pure: 45 };  // seconds per boss question
 var CRIT_SECS = 15;                    // answer within this for a critical hit (bonus points only)
 var HEARTS = 3;
 var HURT_MS = 1600;
-var ORDERS = { s1: 8, s2: 4, s3: 6, s4: 8 };   // orders per stage
-var PASS = { s1: 5, s2: 3, s3: 4, s4: 5 };     // orders served to clear a stage (1 star)
+var ORDERS = { s1: 6, s2: 4, s3: 6, s4: 8 };   // orders per stage
+var S1_MAX_C = 3;                      // Stage 1: most carbon atoms in any order
+var PASS = { s1: 4, s2: 3, s3: 4, s4: 5 };     // orders served to clear a stage (1 star)
 var PATIENCE = { base: 35, perAtom: 5, cs: 1.25, table: 1.6, critic: 45 }; // seconds
 var IMG = {                             // image files in the same folder (missing files fall back to drawings)
   hero: "hero%20chef.png", heroHurt: "hero%20chef%20hurt.png",
@@ -1198,7 +1199,7 @@ var S1 = [
   ["pure", "ester", "By name", "Methyl ethanoate", ["CC(=O)OC"]], ["pure", "ester", "By name", "Ethyl ethanoate", ["CC(=O)OCC"]],
   ["pure", "ester", "By name", "Ethyl methanoate", ["CCOC=O"]], ["pure", "ester", "By name", "Methyl propanoate", ["CCC(=O)OC"]],
   ["pure", "ester", "By description", "The ester made from ethanol and propanoic acid", ["CCC(=O)OCC"]],
-  ["pure", "ester", "By formula", "CH3COOCH3", ["CC(=O)OC"]]
+  ["pure", "ester", "By formula", "CH3COOCH3", ["CC(=O)OC"]], ["pure", "ester", "By name", "Methyl methanoate", ["COC=O"]]
 ];
 var SAY = {
   "By name": ["One {d}, please!", "I'll have the {d}.", "{D} for me, thanks!", "Can I get the {d}?"],
@@ -1458,7 +1459,7 @@ $("btn-quit").addEventListener("click", function () { stopPatience(); stopBossTi
 
 /* =================== STAGE INTRO =================== */
 var INTRO = {
-  s1: { list: ["Customers order a molecule by its name, formula or description.", "Drag C, H and O atoms onto the plate, then tap between two atoms to bond them.", "Every carbon needs 4 bonds, every oxygen 2 and every hydrogen 1.", "Wrong dishes come back with a hint, and bond counters appear to help you."], pure: "Names like butane mean a straight chain. If the ticket only gives a formula, any isomer is fine." },
+  s1: { list: ["Customers order a molecule by its name, formula or description.", "Drag C, H and O atoms onto the plate, then tap between two atoms to bond them.", "Every carbon needs 4 bonds, every oxygen 2 and every hydrogen 1.", "Wrong dishes come back with a hint, and bond counters appear to help you."], pure: "If the ticket only gives a formula, any isomer is fine." },
   s2: { list: ["Each table wants different isomers: the same molecular formula, but a different structure.", "Build one isomer and serve it. It takes a seat. Then build the next one.", "Flipping or bending a chain doesn't make a new isomer!"] },
   s3: { list: ["Each customer wants a product, but the fridge only has the starting chemicals.", "First pick the kitchen station with the right reagents and conditions.", "Then build the product's displayed formula on the plate."], pure: "Some orders need two stations, one after the other." },
   s4: { list: ["The food critic runs chemical tests on the diner's dishes.", "Pick the dish, result or name the critic is after before they lose interest.", "Every answer comes with the chemistry behind it."] },
@@ -1482,8 +1483,8 @@ var D = null, pTimer = null;
 function makeOrders(id) {
   var t = G.tier;
   if (id === "s1") {
-    var mine = S1.filter(function (o) { return t === "pure" || o[0] === "cs"; });
-    var plan = t === "cs" ? { alkane: 2, alkene: 2, alcohol: 3, acid: 1 } : { alkane: 1, alkene: 1, alcohol: 2, acid: 2, ester: 2 };
+    var mine = S1.filter(function (o) { return (t === "pure" || o[0] === "cs") && countsOf(parseSmi(o[4][0])).C <= S1_MAX_C; });
+    var plan = t === "cs" ? { alkane: 2, alkene: 1, alcohol: 2, acid: 1 } : { alkane: 1, alkene: 1, alcohol: 1, acid: 1, ester: 2 };
     var out = [];
     Object.keys(plan).forEach(function (grp) {
       var cand = shuffle(mine.filter(function (o) { return o[1] === grp; })), used = {};
