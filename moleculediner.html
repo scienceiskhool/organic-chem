@@ -674,7 +674,7 @@ var CLASSES = [];
 ["S1", "S2", "S3", "S4"].forEach(function (l) {
   ["Charity", "Courage", "Faith", "Hope", "Humility", "Integrity", "Love", "Respect", "Joy"].forEach(function (v) { CLASSES.push(l + " " + v); });
 });
-CLASSES.push("S5 Faith", "Other");
+CLASSES.push("S5 Faith", "Visitor", "Other");
 
 /* =================== HELPERS =================== */
 function $(id) { return document.getElementById(id); }
@@ -1402,7 +1402,7 @@ function readStudent() {
   function err(m) { $("form-err").textContent = m; }
   if (!name) return err("Type your name."), null;
   if (!cls) return err("Choose your class."), null;
-  if (!/^\d{1,2}$/.test(reg)) return err("Type your register number (1–2 digits)."), null;
+  if (!(cls === "Visitor" || /^\d{1,2}$/.test(reg))) return err("Type your register number (1–2 digits)."), null;
   if (!G.tier) return err("Choose Combined Science or Pure Chemistry."), null;
   err("");
   var s = { name: name, cls: cls, reg: reg, tier: G.tier }; store("student", s); return s;
